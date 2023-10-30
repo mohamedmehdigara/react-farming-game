@@ -3,10 +3,30 @@ import React, { memo, useState } from "react";
 import Field from "./Field";
 import Plant from "./Plant";
 
+
+const Farm = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+`;
+
+
+// Memoize the renderPlants function to improve performance
+
+
+
 // Define the seeds and setSeeds state variables
+
+
 
 const MyFarm = ({  }) => {
   const [seeds, setSeeds] = useState(10);
+  // Define the plants and setPlants state variables
+const [plants, setPlants] = useState([]);
+// Define the player state variable
+const [player, setPlayer] = useState({ food: 0 });
+
+const renderPlantsMemo = useMemo(() => renderPlants(plants), [plants]);
+
 
   // Improve the performance of the `renderPlants` function by using `useMemo` to cache the plant components
   const plantComponents = useMemo(() => renderPlants(plants), [plants]);
