@@ -1,5 +1,5 @@
 import styled from "styled-components";
-
+import React, {useState} from "react";
 import Field from "./Field";
 import Plant from "./Plant";
 
@@ -61,14 +61,20 @@ const harvest = (plantIndex) => {
 };
 
 const MyFarm = ({ plants }) => {
-  return (
-    <Farm>
-      {renderFields()}
-      {renderPlants(plants)}
-      {player.food}
-
-    </Farm>
-  );
-};
-
+     const [seeds, setSeeds] = useState(10);
+    
+      return (
+        <Farm>
+          <button onClick={() => {
+            setSeeds(seeds - 1);
+            plants.push({ stage: 0 });
+          }}>Plant Seed</button>
+    
+          {renderFields()}
+          {renderPlants(plants)}
+          {player.food}
+        </Farm>
+      );
+    };
+    
 export default MyFarm;
