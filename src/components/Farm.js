@@ -85,7 +85,7 @@ const MyFarm = ({ seeds, setSeeds }) => {
 
   return (
     <Farm>
-      <button
+     <button
         onClick={() => {
           if (seeds > 0) {
             setSeeds(seeds - 1);
