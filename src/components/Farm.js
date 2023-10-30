@@ -39,7 +39,9 @@ const useRenderPlants = (plants) => {
 };
 
 // Define the renderPlants function outside of the MyFarm component
-const renderPlants = (plants) => {
+const renderPlants = () => {
+  const plants = [];
+
   const plantComponents = [];
   for (let i = 0; i < plants.length; i++) {
     const plant = plants[i];
