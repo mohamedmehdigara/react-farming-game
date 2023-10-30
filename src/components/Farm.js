@@ -1,80 +1,87 @@
 import styled from "styled-components";
-import React, {useState} from "react";
+import React, { memo, useState } from "react";
 import Field from "./Field";
 import Plant from "./Plant";
 
-// Define the plants variable
-const plants = [];
-const player = {};
+// Define the seeds and setSeeds state variables
 
+const MyFarm = ({  }) => {
+  const [seeds, setSeeds] = useState(10);
 
-const Farm = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-`;
+  // Improve the performance of the `renderPlants` function by using `useMemo` to cache the plant components
+  const plantComponents = useMemo(() => renderPlants(plants), [plants]);
 
-const renderFields = () => {
-  const fields = [];
-  for (let i = 0; i < 10; i++) {
-    fields.push(<Field key={i} />);
-  }
-  return fields;
-};
+  // Add a new state variable to track the selected plant index
+  const [selectedPlantIndex, setSelectedPlantIndex] = useState(-1);
 
-const renderPlants = (plants) => {
-  const plantComponents = [];
-  for (let i = 0; i < plants.length; i++) {
-    const plant = plants[i];
-    const PlantComponent = styled(Plant)`
-      background-color: ${plant.stage === 3 ? "red" : "green"};
-    `;
+  // Add a new function to handle plant selection
+  const handlePlantSelection = (plantIndex) => {
+    setSelectedPlantIndex(plantIndex);
+  };
 
-    plantComponents.push(
-      <PlantComponent key={i} onClick={() => harvest(i)}>
-        {plant.stage}
-      </PlantComponent>
-    );
-  }
-  return plantComponents;
-};
+  // Update the `renderPlants` function to highlight the selected plant
+  const renderPlants = (plants) => {
+    return plants.map((plant, index) => {
+      const PlantComponent = styled(Plant)`
+        background-color: ${plant.stage === 3 ? "red" : "green"};
+        ${selectedPlantIndex === index ? "border: 2px solid blue;" : ""}
+      `;
 
-const harvest = (plantIndex) => {
-  // Get the plant at the given index
-  const plant = plants[plantIndex];
-
-  // Check if the plant is fully grown
-  if (plant.stage === 3) {
-    // Remove the plant from the array
-    plants.splice(plantIndex, 1);
-
-    // Add code to give the player the harvested resources
-    // For example, you could add a new property to the `player` object, such as `food`, and then increment it by the plant's value
-    player.food += plant.value;
-
-    // Add code to display a message to the player about the harvest
-    // For example, you could use an alert box or a toast notification
-    alert("You harvested a plant!");
-  } else {
-    // The plant is not fully grown, so display a message to the player
-    alert("The plant is not fully grown yet!");
-  }
-};
-
-const MyFarm = ({ plants }) => {
-     const [seeds, setSeeds] = useState(10);
-    
       return (
-        <Farm>
-          <button onClick={() => {
-            setSeeds(seeds - 1);
-            plants.push({ stage: 0 });
-          }}>Plant Seed</button>
-    
-          {renderFields()}
-          {renderPlants(plants)}
-          {player.food}
-        </Farm>
+        <PlantComponent
+          key={index}
+          onClick={() => {
+            harvest(index);
+            handlePlantSelection(index);
+          }}
+        >
+          {plant.stage}
+        </PlantComponent>
       );
-    };
-    
-export default MyFarm;
+    });
+  };
+
+  // Add a new function to handle plant watering
+  const waterPlant = () => {
+    // Get the selected plant
+    const selectedPlant = plants[selectedPlantIndex];
+
+    // Check if the selected plant is fully grown
+    if (selectedPlant.stage === 3) {
+      // The plant is already fully grown, so display a message to the player
+      alert("The plant is already fully grown!");
+    } else {
+      // Water the plant
+      selectedPlant.stage++;
+
+      // Update the plants state variable
+      setPlants([...plants]);
+    }
+  };
+
+  // Add a new button to allow the player to water the selected plant
+  return (
+    <Farm>
+      <button
+        onClick={() => {
+          if (seeds > 0) {
+            setSeeds(seeds - 1);
+            setPlants([...plants, { stage: 0 }]);
+          }
+        }}
+        disabled={seeds === 0}
+      >
+        Plant Seed
+      </button>
+      <button onClick={waterPlant} disabled={selectedPlantIndex === -1}>
+        Water Plant
+      </button>
+
+      {renderFields()}
+      {plantComponents}
+      {player.food}
+    </Farm>
+  );
+};
+
+export default memo(MyFarm);
