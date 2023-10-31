@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import SeedComponent from "./SeedComponent";
+import MySeed from "./Seed";
 
 const SeedList = styled.ul`
   width: 100px;
@@ -11,6 +11,10 @@ const SeedList = styled.ul`
     display: inline-block;
     margin: 5px;
   }
+
+  & {
+    title: "Select a seed to plant";
+  }
 `;
 
 const MySeedList = ({ seeds, onSelect }) => {
@@ -18,8 +22,11 @@ const MySeedList = ({ seeds, onSelect }) => {
     <SeedList>
       {seeds.map((seed, index) => (
         <li key={index}>
-          <SeedComponent
-            className={seed.isSelected ? "is-selected" : ""}
+          <MySeed
+            name={seed.name}
+            stage={seed.stage}
+            isSelected={seed.isSelected}
+            isDisabled={seed.isDisabled}
             onClick={() => onSelect(seed)}
           />
         </li>
