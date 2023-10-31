@@ -1,8 +1,7 @@
 import React, { useState } from "react";
+import MyPlantDialog from "./components/PlantDialog";
 import SeedList from "./components/SeedList";
-import Field from "./components/Field";
-import Farm from "./components/Farm";
-import Leaderboard from "./components/Leaderboard";
+import Button from "./components/Button";
 
 const App = () => {
   const [seeds, setSeeds] = useState([
@@ -11,18 +10,30 @@ const App = () => {
     { name: "Carrot", stage: 0 },
   ]);
 
-  const plantSeed = (seedIndex) => {
-    const newSeeds = [...seeds];
-    newSeeds[seedIndex].stage = 1;
-    setSeeds(newSeeds);
+  const [isPlantDialogOpen, setIsPlantDialogOpen] = useState(false);
+
+  const openPlantDialog = () => {
+    setIsPlantDialogOpen(true);
+  };
+
+  const closePlantDialog = () => {
+    setIsPlantDialogOpen(false);
   };
 
   return (
     <div>
       <h1>Farm Game</h1>
-      <SeedList seeds={seeds} onSelect={plantSeed} />
-      <Farm seeds={seeds} plantSeed={plantSeed} />
-      <Leaderboard />
+      <SeedList seeds={seeds} />
+      <Button onClick={openPlantDialog}>Plant a seed</Button>
+      {isPlantDialogOpen && (
+        <MyPlantDialog
+          seeds={seeds}
+          onSelect={(seed) => {
+            // Plant the seed
+          }}
+          onClose={closePlantDialog}
+        />
+      )}
     </div>
   );
 };
