@@ -13,6 +13,10 @@ const Field = styled.div`
   &.is-planted {
     background-color: #00ff00;
   }
+
+  &:hover {
+    cursor: pointer;
+  }
 `;
 
 const getPlant = (fieldIndex) => {
@@ -27,7 +31,7 @@ const getPlant = (fieldIndex) => {
   }
 };
 
-const MyField = ({ fieldIndex }) => {
+const MyField = ({ fieldIndex, onClick }) => {
   // Get the plant that is planted in the field.
   const plant = getPlant(fieldIndex);
 
@@ -38,7 +42,11 @@ const MyField = ({ fieldIndex }) => {
   const tooltip = plant && plant.stage ? `Stage ${plant.stage}` : "";
 
   return (
-    <Field className={isPlanted ? "is-planted" : ""} title={tooltip}>
+    <Field
+      className={isPlanted ? "is-planted" : ""}
+      title={tooltip}
+      onClick={onClick}
+    >
       {plant && plant.stage}
     </Field>
   );

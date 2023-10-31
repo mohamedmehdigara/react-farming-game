@@ -1,6 +1,8 @@
 import styled from "styled-components";
 import Plant from "./Plant";
 import Button from "./Button";
+import React from "react";
+import Field from "./Field";
 
 const Farm = styled.div`
   display: flex;
@@ -11,17 +13,14 @@ const Farm = styled.div`
 
 const MyFarm = ({ seeds, plantSeed }) => {
   return (
-    <Farm>
-      <ul>
-        {seeds.map((seed, index) => (
-          <li key={index}>
-            <Plant seed={seed} />
-          </li>
-        ))}
-      </ul>
-      <Button onClick={plantSeed}>Plant Seed</Button>
-    </Farm>
+    <ul>
+      {seeds.map((seed, index) => (
+        <li key={index}>
+          <Field fieldIndex={index} onClick={plantSeed} />
+        </li>
+      ))}
+    </ul>
   );
 };
 
-export default MyFarm;
+export default Farm;
