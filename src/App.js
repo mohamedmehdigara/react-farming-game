@@ -81,7 +81,7 @@ const MyApp = () => {
       </Header>
 
       <Main>
-        <Farm plants={seeds} />
+      <Farm seeds={seeds} plantSeed={plantSeed} />
       </Main>
 
       <Footer>
