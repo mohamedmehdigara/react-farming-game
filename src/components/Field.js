@@ -1,7 +1,7 @@
 import styled from "styled-components";
 import React from "react";
 
-// Define the plants variable
+// Define the plants array
 const plants = [];
 
 const Field = styled.div`
@@ -9,13 +9,10 @@ const Field = styled.div`
   height: 100px;
   border: 1px solid black;
   background-color: #fff;
+  cursor: pointer;
 
   &.is-planted {
     background-color: #00ff00;
-  }
-
-  &:hover {
-    cursor: pointer;
   }
 `;
 
@@ -38,13 +35,10 @@ const MyField = ({ fieldIndex, onClick }) => {
   // Determine the CSS class of the field based on whether or not there is a plant planted in it.
   const isPlanted = !!plant;
 
-  // Add a tooltip to the field that shows the plant's stage, if there is a plant planted in the field.
-  const tooltip = plant && plant.stage ? `Stage ${plant.stage}` : "";
-
+  // Return the field.
   return (
     <Field
       className={isPlanted ? "is-planted" : ""}
-      title={tooltip}
       onClick={onClick}
     >
       {plant && plant.stage}

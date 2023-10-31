@@ -3,6 +3,7 @@ import MyButton from "./components/Button";
 import SeedList from "./components/SeedList";
 import Field from "./components/Field";
 import Farm from "./components/Farm";
+import Button from "./components/Button";
 
 const App = () => {
   const [seeds, setSeeds] = useState([
@@ -23,10 +24,8 @@ const App = () => {
     <div>
       <h1>Farm Game</h1>
       <SeedList seeds={seeds} />
-      <MyButton onClick={plantSeed}>Plant a seed</MyButton>
+      <Button onClick={plantSeed}>Plant a seed</Button>
       <Field />
-      <Farm seeds={seeds} plantSeed={plantSeed} />
-
     </div>
   );
 };
