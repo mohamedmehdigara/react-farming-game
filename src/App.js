@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import MyFarm from "./components/Farm";
+import MyButton from "./components/Button";
 import SeedList from "./components/SeedList";
-import Button from "./components/Button";
+import Field from "./components/Field";
 
 const App = () => {
   const [seeds, setSeeds] = useState([
@@ -22,8 +22,8 @@ const App = () => {
     <div>
       <h1>Farm Game</h1>
       <SeedList seeds={seeds} />
-      <Button onClick={plantSeed}>Plant a seed</Button>
-      <MyFarm seeds={seeds} plantSeed={plantSeed} />
+      <MyButton onClick={plantSeed}>Plant a seed</MyButton>
+      <Field />
     </div>
   );
 };

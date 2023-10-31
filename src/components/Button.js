@@ -9,6 +9,9 @@ const Button = styled.button`
   background-color: #fff;
   cursor: pointer;
   outline: none;
+  font-weight: bold;
+  text-align: center;
+  transition: all 0.2s ease-in-out;
 
   &.is-disabled {
     background-color: #ccc;
@@ -21,6 +24,7 @@ const Button = styled.button`
 
   &:active {
     background-color: #ccc;
+    transform: scale(0.95);
   }
 `;
 
