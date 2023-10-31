@@ -6,11 +6,13 @@ import Field from "./Field";
 
 const Farm = styled.div`
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
   width: 500px;
   margin: 0 auto;
+  flex-wrap: wrap;
+  gap: 10px;
 `;
 
 const MyFarm = ({ seeds, plantSeed }) => {
