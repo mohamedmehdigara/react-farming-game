@@ -1,4 +1,6 @@
 import styled from "styled-components";
+import PropTypes from "prop-types";
+import React from "react";
 
 const Button = styled.button`
   width: 100px;
@@ -13,12 +15,24 @@ const Button = styled.button`
   }
 `;
 
-const MyButton = ({ children, onClick, isDisabled }) => {
+const MyButton = ({ children, onClick, isDisabled, type }) => {
   return (
-    <Button onClick={onClick} isDisabled={isDisabled}>
+    <Button
+      onClick={onClick}
+      isDisabled={isDisabled}
+      type={type}
+    >
       {children}
     </Button>
   );
 };
 
+MyButton.propTypes = {
+  children: PropTypes.node.isRequired,
+  onClick: PropTypes.func.isRequired,
+  isDisabled: PropTypes.bool,
+  type: PropTypes.string,
+};
+
 export default MyButton;
+
