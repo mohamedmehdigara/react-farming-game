@@ -9,18 +9,20 @@ const Farm = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  width: 500px;
+  margin: 0 auto;
 `;
 
 const MyFarm = ({ seeds, plantSeed }) => {
+  const fields = seeds.map((seed, index) => (
+    <Field key={index} fieldIndex={index} onClick={plantSeed} />
+  ));
+
   return (
-    <ul>
-      {seeds.map((seed, index) => (
-        <li key={index}>
-          <Field fieldIndex={index} onClick={plantSeed} />
-        </li>
-      ))}
-    </ul>
+    <Farm>
+      {fields}
+    </Farm>
   );
 };
 
-export default Farm;
+export default MyFarm;

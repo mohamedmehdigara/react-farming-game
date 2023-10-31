@@ -8,10 +8,19 @@ const Button = styled.button`
   border: 1px solid black;
   background-color: #fff;
   cursor: pointer;
+  outline: none;
 
   &.is-disabled {
     background-color: #ccc;
     cursor: default;
+  }
+
+  &:hover {
+    background-color: #eee;
+  }
+
+  &:active {
+    background-color: #ccc;
   }
 `;
 
@@ -35,4 +44,3 @@ MyButton.propTypes = {
 };
 
 export default MyButton;
-
