@@ -13,6 +13,8 @@ const Farm = styled.div`
   margin: 0 auto;
   flex-wrap: wrap;
   gap: 10px;
+  border-radius: 10px;
+  box-shadow: 0 0 3px #ccc;
 `;
 
 const MyFarm = ({ seeds, plantSeed }) => {
@@ -22,8 +24,11 @@ const MyFarm = ({ seeds, plantSeed }) => {
 
   return (
     <Farm>
-      {fields}
-    </Farm>
+    <h1>Farm</h1>
+    <p>Plant seeds and grow your crops.</p>
+    {fields}
+  </Farm>
+  
   );
 };
 

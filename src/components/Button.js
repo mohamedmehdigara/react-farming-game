@@ -5,7 +5,8 @@ import React from "react";
 const Button = styled.button`
   width: 100px;
   height: 50px;
-  border: 1px solid black;
+  border-radius: 5px;
+  border: 1px solid #ccc;
   background-color: #fff;
   cursor: pointer;
   outline: none;
@@ -20,6 +21,7 @@ const Button = styled.button`
 
   &:hover {
     background-color: #eee;
+    box-shadow: 0 0 3px #ccc;
   }
 
   &:active {
