@@ -1,6 +1,8 @@
 import styled from "styled-components";
 import React from "react";
 
+// Define the plants variable
+const plants = [];
 
 const Field = styled.div`
   width: 100px;
@@ -13,7 +15,7 @@ const Field = styled.div`
   }
 `;
 
-const getPlant = (plants, fieldIndex) => {
+const getPlant = (fieldIndex) => {
   // Get the plant at the given field index.
   const plant = plants[fieldIndex];
 
@@ -25,18 +27,21 @@ const getPlant = (plants, fieldIndex) => {
   }
 };
 
-function Field  ({ plants, fieldIndex })  {
+const MyField = ({ fieldIndex }) => {
   // Get the plant that is planted in the field.
-  const plant = getPlant(plants, fieldIndex);
+  const plant = getPlant(fieldIndex);
 
   // Determine the CSS class of the field based on whether or not there is a plant planted in it.
   const isPlanted = !!plant;
 
+  // Add a tooltip to the field that shows the plant's stage, if there is a plant planted in the field.
+  const tooltip = plant && plant.stage ? `Stage ${plant.stage}` : "";
+
   return (
-    <Field className={isPlanted ? "is-planted" : ""}>
+    <Field className={isPlanted ? "is-planted" : ""} title={tooltip}>
       {plant && plant.stage}
     </Field>
   );
 };
 
-export default Field;
+export default MyField;
