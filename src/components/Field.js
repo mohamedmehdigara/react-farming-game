@@ -1,8 +1,32 @@
 import styled from "styled-components";
-import React, {useState} from "react";
+import React, { useState } from "react";
 
-// Define the plants array
-const plants = [];
+const PlantIcon = () => {
+  return (
+    <svg viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="40" fill="#00ff00" />
+      <path
+        fill="#fff"
+        d="M50,25 L50,50 L20,50 L20,75 L50,75 Z"
+      />
+    </svg>
+  );
+};
+
+const WaterIcon = () => {
+  return (
+    <svg viewBox="0 0 100 100">
+      <path
+        fill="#000"
+        d="M50,10 L50,90 L20,90 L20,70 L50,70 Z"
+      />
+      <path
+        fill="#fff"
+        d="M50,70 L80,70 L80,90 L50,90 Z"
+      />
+    </svg>
+  );
+};
 
 const Field = styled.div`
   width: 100px;
@@ -28,6 +52,7 @@ const Field = styled.div`
 `;
 
 const getPlant = (fieldIndex) => {
+  const plants = [];
   // Get the plant at the given field index.
   const plant = plants[fieldIndex];
 
@@ -53,10 +78,11 @@ const MyField = ({ fieldIndex, onClick, onSelect = () => {}, title, ariaLabel, w
     onSelect && onSelect();
   };
 
-  // Display the plant image, if there is a plant planted in the field.
+  // Display the plant icon, if there is a plant planted in the field.
+  const plantIconDisplay = isPlanted && <PlantIcon />;
 
-  // Display the water level, if the water level is below 100%.
-  const waterLevelDisplay = waterLevel < 100 && <p>Water: {waterLevel}%</p>;
+  // Display the water icon, if the water level is below 100%.
+  const waterIconDisplay = waterLevel < 100 && <WaterIcon />;
 
   // Return the field.
   return (
@@ -72,7 +98,8 @@ const MyField = ({ fieldIndex, onClick, onSelect = () => {}, title, ariaLabel, w
       onFocus={() => setIsFocused(true)}
       onBlur={() => setIsFocused(false)}
     >
-      {waterLevelDisplay}
+      {plantIconDisplay}
+      {waterIconDisplay}
     </Field>
   );
 };
