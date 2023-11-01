@@ -6,9 +6,12 @@ const HarvestedDisplay = () => {
 
   const harvestedPlants = farmState.harvestedPlants;
 
+  // Add a total harvested plants count.
+  const totalHarvestedPlants = harvestedPlants.length;
+
   return (
     <div>
-      <h2>Harvested Plants</h2>
+      <h2>Harvested Plants ({totalHarvestedPlants})</h2>
       <ul>
         {harvestedPlants.map((plant) => (
           <li key={plant.name}>{plant.name}</li>
