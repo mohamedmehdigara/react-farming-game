@@ -2,7 +2,7 @@ import React, { createContext, useState } from "react";
 
 export const FarmStateContext = createContext();
 
- const FarmStateProvider = ({ children }) => {
+const FarmStateProvider = ({ children }) => {
   const [seeds, setSeeds] = useState([
     { name: "Wheat", stage: 0 },
     { name: "Corn", stage: 0 },
@@ -19,17 +19,29 @@ export const FarmStateContext = createContext();
       return;
     }
 
-    // Plant the seed.
+    // Check if the player has enough water.
+    if (water < 10) {
+      return;
+    }
+
+    // Plant the seed and consume water.
     setSeeds((prevSeeds) => {
       const newSeeds = [...prevSeeds];
       newSeeds[fieldIndex].stage = 1;
       return newSeeds;
     });
+
+    setWater(water - 10);
   };
 
   const waterPlant = (fieldIndex) => {
     // Check if the field is empty.
     if (!seeds[fieldIndex]) {
+      return;
+    }
+
+    // Check if the plant is fully grown.
+    if (seeds[fieldIndex].stage >= 3) {
       return;
     }
 
@@ -80,4 +92,5 @@ export const FarmStateContext = createContext();
     </FarmStateContext.Provider>
   );
 };
+
 export default FarmStateProvider;
