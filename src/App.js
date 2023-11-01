@@ -16,25 +16,33 @@ const App = () => {
   const [water, setWater] = useState(100);
 
   const plantSeed = (fieldIndex) => {
+    // Check if the field is empty.
+    if (!seeds[fieldIndex]) {
+      return;
+    }
+  
+    // Plant the seed.
     setSeeds((prevSeeds) => {
       const newSeeds = [...prevSeeds];
       newSeeds[fieldIndex].stage = 1;
       return newSeeds;
     });
   };
-
+  
   const waterPlant = (fieldIndex) => {
-    setWater((prevWater) => {
-      const newWater = prevWater - 10;
-      return newWater;
-    });
+    // Check if the field is empty.
+    if (!seeds[fieldIndex]) {
+      return;
+    }
+  
+    // Water the plant.
     setSeeds((prevSeeds) => {
       const newSeeds = [...prevSeeds];
       newSeeds[fieldIndex].stage++;
       return newSeeds;
     });
   };
-
+  
   const handleSelectField = (fieldIndex) => {
     setSelectedField(fieldIndex);
   };
