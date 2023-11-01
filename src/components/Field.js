@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import React from "react";
+import React, {useState} from "react";
 
 // Define the plants array
 const plants = [];
@@ -45,8 +45,8 @@ const MyField = ({ fieldIndex, onClick, onSelect = () => {}, title, ariaLabel, w
 
   // Determine the CSS class of the field based on whether or not there is a plant planted in it and whether it is hovered over or focused.
   const isPlanted = !!plant;
-  const isHovered = false; // TODO: Implement this
-  const isFocused = false; // TODO: Implement this
+  const [isHovered, setIsHovered] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   // Call the function that is passed to the onSelect prop before the onSelect event is fired.
   const handleSelect = () => {
@@ -67,10 +67,10 @@ const MyField = ({ fieldIndex, onClick, onSelect = () => {}, title, ariaLabel, w
       className={`${isPlanted ? "is-planted" : ""} ${isHovered ? "is-hovered" : ""} ${isFocused ? "is-focused" : ""}`}
       onClick={onClick}
       onSelect={handleSelect}
-      onMouseEnter={() => (isHovered = true)}
-      onMouseLeave={() => (isHovered = false)}
-      onFocus={() => (isFocused = true)}
-      onBlur={() => (isFocused = false)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onFocus={() => setIsFocused(true)}
+      onBlur={() => setIsFocused(false)}
     >
       {waterLevelDisplay}
     </Field>
