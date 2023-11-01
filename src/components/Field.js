@@ -34,7 +34,7 @@ const getPlant = (fieldIndex) => {
   }
 };
 
-const MyField = ({ fieldIndex, onClick }) => {
+const MyField = ({ fieldIndex, onClick, onSelect }) => {
   // Get the plant that is planted in the field.
   const plant = getPlant(fieldIndex);
 
@@ -42,16 +42,21 @@ const MyField = ({ fieldIndex, onClick }) => {
   const isPlanted = !!plant;
   const isHovered = false; // TODO: Implement this
 
+  // Call the function that is passed to the onSelect prop before the onSelect event is fired.
+  const handleSelect = () => {
+    onSelect && onSelect();
+  };
   // Return the field.
   return (
     <Field
-  fieldIndex={0}
-  onClick={() => alert('You clicked on field 0!')}
->
-  <h1>Field</h1>
-  <p>Click to plant a seed.</p>
-</Field>
-
+      className={isPlanted ? "is-planted" : ""}
+      onClick={onClick}
+      onSelect={onSelect}
+      onMouseEnter={() => isHovered = true}
+      onMouseLeave={() => isHovered = false}
+    >
+      {plant && plant.stage}
+    </Field>
   );
 };
 
