@@ -3,7 +3,6 @@ import MyButton from "./components/Button";
 import SeedList from "./components/SeedList";
 import Field from "./components/Field";
 import Farm from "./components/Farm";
-import Button from "./components/Button";
 
 const App = () => {
   const [seeds, setSeeds] = useState([
@@ -20,12 +19,27 @@ const App = () => {
     });
   };
 
+  const [selectedField, setSelectedField] = useState(null);
+
+  const handleSelectField = (fieldIndex) => {
+    setSelectedField(fieldIndex);
+  };
+
   return (
     <div>
       <h1>Farm Game</h1>
       <SeedList seeds={seeds} />
-      <Button onClick={plantSeed}>Plant a seed</Button>
-      <Field />
+      <MyButton onClick={() => plantSeed(selectedField)}>Plant seed</MyButton>
+      <Farm selectedField={selectedField}>
+        {seeds.map((seed, index) => (
+          <Field
+            key={index}
+            fieldIndex={index}
+            onSelect={handleSelectField}
+            seed={seed}
+          />
+        ))}
+      </Farm>
     </div>
   );
 };

@@ -18,7 +18,7 @@ const Farm = styled.div`
 `;
 
 const MyFarm = ({ seeds, plantSeed }) => {
-  const fields = seeds.map((seed, index) => (
+  const fields = seeds && seeds.map((seed, index) => (
     <Field key={index} fieldIndex={index} onClick={plantSeed} />
   ));
 

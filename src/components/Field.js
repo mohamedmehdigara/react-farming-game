@@ -11,6 +11,7 @@ const Field = styled.div`
   background-color: #fff;
   cursor: pointer;
   border-radius: 5px;
+  transition: all 0.2s ease-in-out;
 
   &.is-planted {
     background-color: #00ff00;
@@ -19,6 +20,10 @@ const Field = styled.div`
   &.is-hovered {
     background-color: #eee;
     box-shadow: 0 0 3px #ccc;
+  }
+
+  &.is-focused {
+    outline: 2px solid #000;
   }
 `;
 
@@ -34,26 +39,33 @@ const getPlant = (fieldIndex) => {
   }
 };
 
-const MyField = ({ fieldIndex, onClick, onSelect }) => {
+const MyField = ({ fieldIndex, onClick, onSelect = () => {}, title }) => {
   // Get the plant that is planted in the field.
   const plant = getPlant(fieldIndex);
 
-  // Determine the CSS class of the field based on whether or not there is a plant planted in it and whether it is hovered over.
+  // Determine the CSS class of the field based on whether or not there is a plant planted in it and whether it is hovered over or focused.
   const isPlanted = !!plant;
   const isHovered = false; // TODO: Implement this
+  const isFocused = false; // TODO: Implement this
 
   // Call the function that is passed to the onSelect prop before the onSelect event is fired.
   const handleSelect = () => {
     onSelect && onSelect();
   };
+
   // Return the field.
   return (
     <Field
-      className={isPlanted ? "is-planted" : ""}
+      role="button"
+      tabIndex={0}
+      aria-label={title}
+      className={`${isPlanted ? "is-planted" : ""} ${isHovered ? "is-hovered" : ""} ${isFocused ? "is-focused" : ""}`}
       onClick={onClick}
-      onSelect={onSelect}
-      onMouseEnter={() => isHovered = true}
-      onMouseLeave={() => isHovered = false}
+      onSelect={handleSelect}
+      onMouseEnter={() => (isHovered = true)}
+      onMouseLeave={() => (isHovered = false)}
+      onFocus={() => (isFocused = true)}
+      onBlur={() => (isFocused = false)}
     >
       {plant && plant.stage}
     </Field>
