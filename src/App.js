@@ -11,12 +11,12 @@ const App = () => {
   return (
     <div className="App">
       <h1>Farm Game</h1>
-      
+      <FarmStateProvider>
         <SeedList />
         <Field />
         <Farm />
         <HarvestedDisplay />
-      <FarmStateProvider/>
+      </FarmStateProvider>
     </div>
   );
 };
