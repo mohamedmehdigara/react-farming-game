@@ -22,17 +22,12 @@ const PlantProgressBar = styled.div`
 `;
 
 const MyPlant = ({ type, progress }) => {
-  const plantImage = {
-    wheat: "https://example.com/wheat.png",
-    corn: "https://example.com/corn.png",
-    carrot: "https://example.com/carrot.png",
-  };
+ 
 
   const progressBarWidth = (progress / 100) * 100;
 
   return (
     <Plant>
-      <img src={plantImage[type]} alt={type} />
       <PlantProgressBar style={{ width: `${progressBarWidth}%` }} />
     </Plant>
   );
