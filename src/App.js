@@ -11,6 +11,10 @@ const App = () => {
     { name: "Carrot", stage: 0 },
   ]);
 
+  const [selectedField, setSelectedField] = useState(null);
+
+  const [water, setWater] = useState(100);
+
   const plantSeed = (fieldIndex) => {
     setSeeds((prevSeeds) => {
       const newSeeds = [...prevSeeds];
@@ -19,7 +23,17 @@ const App = () => {
     });
   };
 
-  const [selectedField, setSelectedField] = useState(null);
+  const waterPlant = (fieldIndex) => {
+    setWater((prevWater) => {
+      const newWater = prevWater - 10;
+      return newWater;
+    });
+    setSeeds((prevSeeds) => {
+      const newSeeds = [...prevSeeds];
+      newSeeds[fieldIndex].stage++;
+      return newSeeds;
+    });
+  };
 
   const handleSelectField = (fieldIndex) => {
     setSelectedField(fieldIndex);
@@ -30,6 +44,7 @@ const App = () => {
       <h1>Farm Game</h1>
       <SeedList seeds={seeds} />
       <MyButton onClick={() => plantSeed(selectedField)}>Plant seed</MyButton>
+      <MyButton onClick={() => waterPlant(selectedField)}>Water plant</MyButton>
       <Farm selectedField={selectedField}>
         {seeds.map((seed, index) => (
           <Field
@@ -40,6 +55,7 @@ const App = () => {
           />
         ))}
       </Farm>
+      <p>Water: {water}%</p>
     </div>
   );
 };

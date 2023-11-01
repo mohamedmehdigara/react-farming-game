@@ -17,22 +17,14 @@ const SeedList = styled.ul`
   }
 `;
 
-const MySeedList = ({ seeds, onSelect }) => {
+const MySeedList = ({ seeds }) => {
   return (
-    <SeedList>
+    <ul>
       {seeds.map((seed, index) => (
-        <li key={index}>
-          <MySeed
-            name={seed.name}
-            stage={seed.stage}
-            isSelected={seed.isSelected}
-            isDisabled={seed.isDisabled}
-            onClick={() => onSelect(seed)}
-          />
-        </li>
+        <li key={index}>{seed.name}</li>
       ))}
-    </SeedList>
+    </ul>
   );
 };
 
-export default MySeedList;
+export default SeedList;

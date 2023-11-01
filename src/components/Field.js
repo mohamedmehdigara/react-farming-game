@@ -39,7 +39,7 @@ const getPlant = (fieldIndex) => {
   }
 };
 
-const MyField = ({ fieldIndex, onClick, onSelect = () => {}, title }) => {
+const MyField = ({ fieldIndex, onClick, onSelect = () => {}, title, ariaLabel, waterLevel }) => {
   // Get the plant that is planted in the field.
   const plant = getPlant(fieldIndex);
 
@@ -53,12 +53,17 @@ const MyField = ({ fieldIndex, onClick, onSelect = () => {}, title }) => {
     onSelect && onSelect();
   };
 
+  // Display the plant image, if there is a plant planted in the field.
+
+  // Display the water level, if the water level is below 100%.
+  const waterLevelDisplay = waterLevel < 100 && <p>Water: {waterLevel}%</p>;
+
   // Return the field.
   return (
     <Field
       role="button"
       tabIndex={0}
-      aria-label={title}
+      aria-label={ariaLabel || title}
       className={`${isPlanted ? "is-planted" : ""} ${isHovered ? "is-hovered" : ""} ${isFocused ? "is-focused" : ""}`}
       onClick={onClick}
       onSelect={handleSelect}
@@ -67,7 +72,7 @@ const MyField = ({ fieldIndex, onClick, onSelect = () => {}, title }) => {
       onFocus={() => (isFocused = true)}
       onBlur={() => (isFocused = false)}
     >
-      {plant && plant.stage}
+      {waterLevelDisplay}
     </Field>
   );
 };
