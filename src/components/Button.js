@@ -13,6 +13,9 @@ const Button = styled.button`
   font-weight: bold;
   text-align: center;
   transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   &.is-disabled {
     background-color: #ccc;
@@ -30,12 +33,15 @@ const Button = styled.button`
   }
 `;
 
-const MyButton = ({ children, onClick, isDisabled, type }) => {
+const MyButton = ({ children, onClick, isDisabled, type, variant }) => {
+  const buttonVariant = variant || "primary";
+
   return (
     <Button
       onClick={onClick}
       isDisabled={isDisabled}
       type={type}
+      className={buttonVariant}
     >
       {children}
     </Button>
@@ -47,6 +53,7 @@ MyButton.propTypes = {
   onClick: PropTypes.func.isRequired,
   isDisabled: PropTypes.bool,
   type: PropTypes.string,
+  variant: PropTypes.oneOf(["primary", "secondary", "danger"]),
 };
 
 export default MyButton;

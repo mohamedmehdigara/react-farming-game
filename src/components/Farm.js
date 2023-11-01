@@ -9,7 +9,8 @@ const Farm = styled.div`
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  width: 500px;
+  width: 100%;
+  max-width: 500px;
   margin: 0 auto;
   flex-wrap: wrap;
   gap: 10px;
@@ -24,11 +25,11 @@ const MyFarm = ({ seeds, plantSeed }) => {
 
   return (
     <Farm>
-    <h1>Farm</h1>
-    <p>Plant seeds and grow your crops.</p>
-    {fields}
-  </Farm>
-  
+      <h1>Farm</h1>
+      <p>Plant seeds and grow your crops.</p>
+      {fields}
+      <Button onClick={() => plantSeed()}>Plant seed</Button>
+    </Farm>
   );
 };
 
