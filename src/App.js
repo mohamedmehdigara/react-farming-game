@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import FarmStateProvider from "./components/FarmStateProvider";
+import React, { useState, useContext } from "react";
+import FarmStateProvider,{FarmStateContext}  from "./components/FarmStateProvider";
 import SeedList from "./components/SeedList";
 import Field from "./components/Field";
 import Farm from "./components/Farm";
@@ -13,6 +13,8 @@ import "./App.css";
 const App = () => {
   // Define the plantDialogOpen, closePlantDialog, and openPlantDialog variables.
   const [plantDialogOpen, setPlantDialogOpen] = useState(false);
+  const { harvestedPlants } = useContext(FarmStateContext);
+
 
   // Define the openPlantDialog function.
   const openPlantDialog = () => {
@@ -32,7 +34,7 @@ const App = () => {
         <SeedList />
         <Field />
         <Farm />
-        <HarvestedDisplay />
+        <HarvestedDisplay harvestedPlants={harvestedPlants} />
         <Leaderboard />
         <PlantDialog open={plantDialogOpen} onClose={closePlantDialog} />
       </FarmStateProvider>

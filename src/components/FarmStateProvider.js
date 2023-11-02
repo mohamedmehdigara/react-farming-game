@@ -3,74 +3,55 @@ import React, { createContext, useState } from "react";
 export const FarmStateContext = createContext();
 
 const FarmStateProvider = ({ children }) => {
+  // Added a `maxSeeds` prop to limit the number of seeds that can be planted.
+  const maxSeeds = 10;
+
   const [seeds, setSeeds] = useState([
     { name: "Wheat", stage: 0 },
     { name: "Corn", stage: 0 },
     { name: "Carrot", stage: 0 },
   ]);
 
-  const [water, setWater] = useState(100);
-
+  const [water, setWater] = useState();
   const [harvestedPlants, setHarvestedPlants] = useState([]);
 
+  // Updated the `plantSeed()` function to check if the number of seeds is already at the maximum.
   const plantSeed = (fieldIndex) => {
-    // Check if the field is empty.
-    if (!seeds[fieldIndex]) {
+    if (seeds[fieldIndex] || seeds.length === maxSeeds) {
       return;
     }
 
-    // Check if the player has enough water.
-    if (water < 10) {
-      return;
-    }
-
-    // Plant the seed and consume water.
+    // Plant the seed.
     setSeeds((prevSeeds) => {
       const newSeeds = [...prevSeeds];
-      newSeeds[fieldIndex].stage = 1;
-      return newSeeds;
-    });
-
-    setWater(water - 10);
-  };
-
-  const waterPlant = (fieldIndex) => {
-    // Check if the field is empty.
-    if (!seeds[fieldIndex]) {
-      return;
-    }
-
-    // Check if the plant is fully grown.
-    if (seeds[fieldIndex].stage >= 3) {
-      return;
-    }
-
-    // Water the plant.
-    setSeeds((prevSeeds) => {
-      const newSeeds = [...prevSeeds];
-      newSeeds[fieldIndex].stage++;
+      newSeeds[fieldIndex] = { name: "Wheat", stage: 1 };
       return newSeeds;
     });
   };
 
-  const harvestPlant = (fieldIndex) => {
-    // Check if the plant is fully grown.
-    if (seeds[fieldIndex].stage < 3) {
-      return;
-    }
-
-    // Harvest the plant.
+  // Added a `waterPlantAll()` function to water all of the plants at once.
+  const waterPlantAll = () => {
     setSeeds((prevSeeds) => {
       const newSeeds = [...prevSeeds];
-      newSeeds[fieldIndex] = null;
+      for (let i = 0; i < newSeeds.length; i++) {
+        if (newSeeds[i] && newSeeds[i].stage < 3) {
+          newSeeds[i].stage++;
+        }
+      }
       return newSeeds;
     });
+  };
 
-    // Add the harvested plant to the harvested plants array.
-    setHarvestedPlants((prevHarvestedPlants) => {
-      const newHarvestedPlants = [...prevHarvestedPlants];
-      newHarvestedPlants.push(seeds[fieldIndex]);
-      return newHarvestedPlants;
+  // Added a `harvestAllPlants()` function to harvest all of the fully grown plants at once.
+  const harvestAllPlants = () => {
+    setSeeds((prevSeeds) => {
+      const newSeeds = [...prevSeeds];
+      for (let i = 0; i < newSeeds.length; i++) {
+        if (newSeeds[i] && newSeeds[i].stage === 3) {
+          newSeeds[i] = null;
+        }
+      }
+      return newSeeds;
     });
   };
 
@@ -84,8 +65,8 @@ const FarmStateProvider = ({ children }) => {
         harvestedPlants,
         setHarvestedPlants,
         plantSeed,
-        waterPlant,
-        harvestPlant,
+        waterPlantAll,
+        harvestAllPlants,
       }}
     >
       {children}
