@@ -14,7 +14,9 @@ import "./App.css";
 const App = () => {
   // Define the plantDialogOpen, closePlantDialog, and openPlantDialog variables.
   const [plantDialogOpen, setPlantDialogOpen] = useState(false);
-  const { harvestedPlants } = useContext(FarmStateContext);
+// App.js
+const context = useContext(FarmStateContext);
+const harvestedPlants = context && context.harvestedPlants ? context.harvestedPlants : [];
 
   // Define the openPlantDialog function.
   const openPlantDialog = () => {
