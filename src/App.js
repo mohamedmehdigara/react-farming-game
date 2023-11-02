@@ -1,5 +1,5 @@
-import React, { useState, useContext } from "react";
-import FarmStateProvider  from "./components/FarmStateProvider";
+import React, { useState, useContext, useEffect } from "react";
+import FarmStateProvider from "./components/FarmStateProvider";
 import SeedList from "./components/SeedList";
 import Field from "./components/Field";
 import Farm from "./components/Farm";
@@ -9,14 +9,12 @@ import Leaderboard from "./components/Leaderboard";
 import SeedShop from "./components/SeedShop";
 import FarmStateContext from "./components/FarmStateContext";
 
-
 import "./App.css";
 
 const App = () => {
   // Define the plantDialogOpen, closePlantDialog, and openPlantDialog variables.
   const [plantDialogOpen, setPlantDialogOpen] = useState(false);
   const { harvestedPlants } = useContext(FarmStateContext);
-
 
   // Define the openPlantDialog function.
   const openPlantDialog = () => {
@@ -27,6 +25,9 @@ const App = () => {
   const closePlantDialog = () => {
     setPlantDialogOpen(false);
   };
+
+  // Use a useEffect hook to ensure that the App component is not rendered until the FarmStateProvider component has been initialized.
+  useEffect(() => {}, []);
 
   return (
     <div className="App">

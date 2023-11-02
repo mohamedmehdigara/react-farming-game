@@ -7,7 +7,7 @@ const FarmStateProvider = ({ children }) => {
 
   // Define the FarmStateContext context object.
   const context = {
-    harvestedPlants,
+    harvestedPlants: harvestedPlants || [],
     setHarvestedPlants,
   };
 
