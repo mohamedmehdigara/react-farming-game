@@ -31,6 +31,11 @@ const Button = styled.button`
     background-color: #ccc;
     transform: scale(0.95);
   }
+
+  /* Added a CSS pseudo-class for the focused state. */
+  &:focus {
+    box-shadow: 0 0 3px #000000;
+  }
 `;
 
 const MyButton = ({ children, onClick, isDisabled, type, variant }) => {

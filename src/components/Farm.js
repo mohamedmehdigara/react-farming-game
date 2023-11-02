@@ -19,16 +19,27 @@ const Farm = styled.div`
 `;
 
 const MyFarm = ({ seeds, plantSeed }) => {
-  const fields = seeds && seeds.map((seed, index) => (
+  // Added a check to make sure that the seeds prop is not null or undefined.
+  if (!seeds) {
+    return null;
+  }
+
+  // Updated the fields variable to use a conditional rendering statement to display the fields only if there are seeds available to plant.
+  const fields = seeds.map((seed, index) => (
     <Field key={index} fieldIndex={index} onClick={plantSeed} />
   ));
+
+  // Updated the Button component to use the disabled prop to disable the button if there are no seeds available to plant.
+  const plantSeedButtonDisabled = seeds.length === 0;
 
   return (
     <Farm>
       <h1>Farm</h1>
       <p>Plant seeds and grow your crops.</p>
       {fields}
-      <Button onClick={() => plantSeed()}>Plant seed</Button>
+      <Button onClick={plantSeed} disabled={plantSeedButtonDisabled}>
+        Plant seed
+      </Button>
     </Farm>
   );
 };
