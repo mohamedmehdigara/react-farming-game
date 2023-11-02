@@ -20,7 +20,18 @@ const DialogContent = styled.div`
   height: 300px;
   background-color: #fff;
   padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 3px #ccc;
 `;
+
+const PlantSeedIcon = () => {
+  return (
+    <svg viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="40" fill="#00ff00" />
+      <path fill="#fff" d="M50,25 L50,50 L20,50 L20,75 L50,75 Z" />
+    </svg>
+  );
+};
 
 const MyPlantDialog = ({ seeds, onSelect, onClose }) => {
   // Added a `title` prop to the `DialogContent` component. This will allow the title of the dialog to be customized.
@@ -30,6 +41,7 @@ const MyPlantDialog = ({ seeds, onSelect, onClose }) => {
     <PlantDialog>
       <DialogContent title={title}>
         <h1>{title}</h1>
+        <PlantSeedIcon />
         <SeedList seeds={seeds} onSelect={onSelect} />
         <Button onClick={onClose}>Cancel</Button>
       </DialogContent>

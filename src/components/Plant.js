@@ -12,6 +12,7 @@ const Plant = styled.div`
   align-items: center;
   font-size: 12px;
   color: white;
+  background-color: #00ff00;
 `;
 
 const PlantProgressBar = styled.div`
@@ -33,6 +34,7 @@ const MyPlant = ({ type, progress }) => {
   const progressBarWidth = progress;
   const progressBarStyle = {
     width: `${progressBarWidth}%`,
+    backgroundColor: progress === 100 ? "#ffffff" : "#00ff00",
   };
 
   return (
