@@ -42,6 +42,8 @@ const harvestedPlants = context && context.harvestedPlants ? context.harvestedPl
         <HarvestedDisplay harvestedPlants={harvestedPlants} />
         <Leaderboard />
         <PlantDialog open={plantDialogOpen} onClose={closePlantDialog} />
+        <SeedShop />
+
       </FarmStateProvider>
 
       <button onClick={openPlantDialog}>Plant a seed</button>
