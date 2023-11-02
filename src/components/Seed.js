@@ -7,6 +7,7 @@ const Seed = styled.div`
   border: 1px solid black;
   background-color: #fff;
   cursor: pointer;
+  border-radius: 5px;
 
   &.is-selected {
     background-color: #ccc;
@@ -17,8 +18,8 @@ const Seed = styled.div`
     cursor: default;
   }
 
-  /* Added a CSS transition to the background-color property. This will make the seed animation when it is selected or deselected. */
-  transition: background-color 0.2s ease-in-out;
+  /* Updated the CSS transition to use the all property instead of just background-color. This will ensure that all of the CSS properties of the seed are animated when it is selected or deselected. */
+  transition: all 0.2s ease-in-out;
 `;
 
 const MySeed = ({ name, stage, isSelected, isDisabled, onClick }) => {

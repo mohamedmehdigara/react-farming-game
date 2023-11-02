@@ -9,17 +9,33 @@ const SeedList = styled.ul`
   background-color: #fff;
   list-style-type: none;
   padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
 
   li {
-    display: inline-block;
     margin: 5px;
     cursor: pointer;
+
+    &.is-selected {
+      background-color: #ccc;
+    }
+
+    &.is-disabled {
+      background-color: #ccc;
+      cursor: default;
+    }
   }
 
   & {
     title: "Select a seed to plant";
   }
 `;
+
+const isSeedReadyToPlant = (stage) => {
+  return stage === "plant";
+};
 
 const MySeedList = ({ seeds, onSelect }) => {
   // Added a `onSelect` prop to the `MySeedList` component. This will allow the seed list to notify its parent component when a seed is selected.
@@ -30,8 +46,9 @@ const MySeedList = ({ seeds, onSelect }) => {
         <MySeed
           key={index}
           name={seed.name}
-          isSelected={seed.isSelected}
-          onClick={() => onSelect(seed.id)}
+          stage={seed.stage}
+          disabled={!isSeedReadyToPlant(seed.stage)}
+          onClick={() => onSelect(seed)}
         />
       ))}
     </SeedList>
