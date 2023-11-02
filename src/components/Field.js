@@ -5,10 +5,7 @@ const PlantIcon = () => {
   return (
     <svg viewBox="0 0 100 100">
       <circle cx="50" cy="50" r="40" fill="#00ff00" />
-      <path
-        fill="#fff"
-        d="M50,25 L50,50 L20,50 L20,75 L50,75 Z"
-      />
+      <path fill="#fff" d="M50,25 L50,50 L20,50 L20,75 L50,75 Z" />
     </svg>
   );
 };
@@ -16,14 +13,8 @@ const PlantIcon = () => {
 const WaterIcon = () => {
   return (
     <svg viewBox="0 0 100 100">
-      <path
-        fill="#000"
-        d="M50,10 L50,90 L20,90 L20,70 L50,70 Z"
-      />
-      <path
-        fill="#fff"
-        d="M50,70 L80,70 L80,90 L50,90 Z"
-      />
+      <path fill="#000" d="M50,10 L50,90 L20,90 L20,70 L50,70 Z" />
+      <path fill="#fff" d="M50,70 L80,70 L80,90 L50,90 Z" />
     </svg>
   );
 };
@@ -52,39 +43,24 @@ const Field = styled.div`
 `;
 
 const getPlant = (fieldIndex) => {
-  const plants = [];
-  // Get the plant at the given field index.
-  const plant = plants[fieldIndex];
-
-  // Return the plant, if it exists.
-  if (plant) {
-    return plant;
-  } else {
-    return null;
-  }
+  const plants = []; // Your code for getting the plant at the given field index
+  return plants[fieldIndex] || null;
 };
 
 const MyField = ({ fieldIndex, onClick, onSelect = () => {}, title, ariaLabel, waterLevel }) => {
-  // Get the plant that is planted in the field.
   const plant = getPlant(fieldIndex);
+  const isPlanted = getPlant(fieldIndex) !== null;
 
-  // Determine the CSS class of the field based on whether or not there is a plant planted in it and whether it is hovered over or focused.
-  const isPlanted = !!plant;
   const [isHovered, setIsHovered] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
 
-  // Call the function that is passed to the onSelect prop before the onSelect event is fired.
   const handleSelect = () => {
     onSelect && onSelect();
   };
 
-  // Display the plant icon, if there is a plant planted in the field.
-  const plantIconDisplay = isPlanted && <PlantIcon />;
-
-  // Display the water icon, if the water level is below 100%.
+  const plantIconDisplay = plant && <PlantIcon />;
   const waterIconDisplay = waterLevel < 100 && <WaterIcon />;
 
-  // Return the field.
   return (
     <Field
       role="button"
