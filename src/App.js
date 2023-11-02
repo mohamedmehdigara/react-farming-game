@@ -1,5 +1,5 @@
 import React, { useState, useContext } from "react";
-import FarmStateProvider,{FarmStateContext}  from "./components/FarmStateProvider";
+import FarmStateProvider  from "./components/FarmStateProvider";
 import SeedList from "./components/SeedList";
 import Field from "./components/Field";
 import Farm from "./components/Farm";
@@ -7,6 +7,8 @@ import HarvestedDisplay from "./components/HarvestedDisplay";
 import PlantDialog from "./components/PlantDialog";
 import Leaderboard from "./components/Leaderboard";
 import SeedShop from "./components/SeedShop";
+import FarmStateContext from "./components/FarmStateContext";
+
 
 import "./App.css";
 

@@ -35,6 +35,7 @@ const Button = styled.button`
   /* Added a CSS pseudo-class for the focused state. */
   &:focus {
     box-shadow: 0 0 3px #000000;
+    border: 1px solid #000000;
   }
 `;
 

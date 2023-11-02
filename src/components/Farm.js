@@ -26,18 +26,28 @@ const MyFarm = ({ seeds, plantSeed }) => {
 
   // Updated the fields variable to use a conditional rendering statement to display the fields only if there are seeds available to plant.
   const fields = seeds.map((seed, index) => (
-    <Field key={index} fieldIndex={index} onClick={plantSeed} />
+    <Field
+      key={index}
+      fieldIndex={index}
+      onClick={plantSeed}
+      hasSeed={seed != null}
+    />
   ));
 
   // Updated the Button component to use the disabled prop to disable the button if there are no seeds available to plant.
   const plantSeedButtonDisabled = seeds.length === 0;
 
+  // Added an aria-label to the Button component to make it more accessible to screen reader users.
   return (
     <Farm>
       <h1>Farm</h1>
       <p>Plant seeds and grow your crops.</p>
       {fields}
-      <Button onClick={plantSeed} disabled={plantSeedButtonDisabled}>
+      <Button
+        onClick={plantSeed}
+        disabled={plantSeedButtonDisabled}
+        aria-label="Plant a seed"
+      >
         Plant seed
       </Button>
     </Farm>
