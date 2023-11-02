@@ -1,5 +1,8 @@
-import React,  {createContext } from "react";
+import React, { createContext } from "react";
 
-const FarmStateContext = createContext();
+const FarmStateContext = createContext({
+  harvestedPlants: [],
+  setHarvestedPlants: () => {},
+});
 
 export default FarmStateContext;

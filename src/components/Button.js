@@ -37,17 +37,31 @@ const Button = styled.button`
     box-shadow: 0 0 3px #000000;
     border: 1px solid #000000;
   }
+
+  /* Added a CSS variable for the button color. */
+  --button-color: ${({ variant }) => {
+    switch (variant) {
+      case "primary":
+        return "#007bff";
+      case "secondary":
+        return "#6c757d";
+      case "danger":
+        return "#dc3545";
+      default:
+        return "#000000";
+    }
+  }};
+
+  color: var(--button-color);
 `;
 
 const MyButton = ({ children, onClick, isDisabled, type, variant }) => {
-  const buttonVariant = variant || "primary";
-
   return (
     <Button
       onClick={onClick}
       isDisabled={isDisabled}
       type={type}
-      className={buttonVariant}
+      className={variant}
     >
       {children}
     </Button>
