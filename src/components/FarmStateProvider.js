@@ -1,16 +1,22 @@
-import React, { useContext } from "react";
-import FarmStateContext from "./FarmStateContext";
-export { FarmStateContext };
+import React, { createContext } from "react";
 
+const FarmStateContext = createContext();
 
 const FarmStateProvider = ({ children }) => {
   const [harvestedPlants, setHarvestedPlants] = React.useState([]);
 
+  // Define the FarmStateContext context object.
+  const context = {
+    harvestedPlants,
+    setHarvestedPlants,
+  };
+
   return (
-    <FarmStateContext.Provider value={{ harvestedPlants, setHarvestedPlants }}>
+    <FarmStateContext.Provider value={context}>
       {children}
     </FarmStateContext.Provider>
   );
 };
 
+export { FarmStateContext };
 export default FarmStateProvider;
