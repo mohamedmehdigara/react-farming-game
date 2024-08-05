@@ -1,8 +1,10 @@
-import styled from "styled-components";
-import Plant from "./Plant"; // Assuming Plant component for grown crops
-import Button from "./Button";
-import React, { useState, useEffect } from "react";
-import Field from "./Field";
+import React, { useState, useEffect, useContext, useNavigate } from 'react';
+import styled from 'styled-components';
+import Field from './Field';
+import Plant from './Plant';
+import Button from './Button';
+import { FarmStateContext } from './FarmStateProvider';
+import InventoryDisplay from './InventoryDisplay'; // Import InventoryDisplay component
 
 const Farm = styled.div`
   display: flex;
@@ -12,95 +14,73 @@ const Farm = styled.div`
   width: 100%;
   max-width: 500px;
   margin: 0 auto;
-  flex-wrap: wrap;
+  gap: 20px;
+`;
+
+const FarmGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
   gap: 10px;
-  border-radius: 10px;
-  box-shadow: 0 0 3px #ccc;
 `;
 
-const SeedInventory = styled.div`
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  margin-bottom: 10px;
-`;
+const MyFarm = () => {
+  const {
+    plantedFields,
+    setPlantedFields,
+    seeds,
+    inventory,
+    plantSeed,
+    harvestPlant,
+    growTime,
+  } = useContext(FarmStateContext); // Retrieve state from context
 
-const MyFarm = ({ seeds, plantSeed, growTime }) => {
-  const [seedInventoryState, setSeedInventoryState] = useState(seeds || []); // Handle missing seeds gracefully (default to empty array)
-  const [plantedFields, setPlantedFields] = useState(new Array(seeds?.length || 0).fill(null)); // Track planted fields (handle missing seeds)
-
-  // Fetch initial seeds if not provided as props (optional)
-  useEffect(() => {
-    if (!seeds) {
-      // Fetch seeds from an API or local storage (implement logic here)
-      console.log("Fetching seeds..."); // Replace with actual fetching logic
-    }
-  }, []);
+  // useEffect for initial state or loading saved game (if implemented)
 
   const handlePlantSeed = (fieldIndex) => {
-    if (seedInventoryState.length === 0) {
-      // No seeds available feedback
-      console.log("No seeds available!"); // Replace with visual/audio feedback
-      return;
+    // Check if field is empty and seed is available
+    if (plantedFields[fieldIndex] === null && seeds.length > 0) {
+      setPlantedFields((prevFields) => {
+        const newFields = [...prevFields];
+        newFields[fieldIndex] = { seedId: seeds[0].id, plantedAt: Date.now() };
+        return newFields;
+      });
+
+      // Update seeds inventory (if applicable)
+      plantSeed(fieldIndex); // Call the provided plantSeed function
     }
-
-    const updatedInventory = [...seedInventoryState];
-    updatedInventory[fieldIndex] = null;
-    setSeedInventoryState(updatedInventory);
-
-    const updatedPlantedFields = [...plantedFields];
-    updatedPlantedFields[fieldIndex] = { seedType: seedInventoryState[fieldIndex], plantedAt: Date.now() }; // Track seed type and planting time
-    setPlantedFields(updatedPlantedFields);
-
-    plantSeed(fieldIndex); // Call the plantSeed function with field index
   };
 
-  // Grow crops functionality (example)
-  useEffect(() => {
-    const growCrops = async () => {
-      for (let i = 0; i < plantedFields.length; i++) {
-        const field = plantedFields[i];
-        if (field && Date.now() - field.plantedAt >= growTime) {
-          // Crop is ready to be harvested (update field state or display message)
-          console.log(`Crop in field ${i} is ready to harvest!`);
-          setPlantedFields((prevFields) => {
-            const updatedFields = [...prevFields];
-            updatedFields[i] = null; // Reset field to allow replanting
-            return updatedFields;
-          });
-        }
-      }
-    };
+  const handleHarvest = (fieldIndex) => {
+    const fieldData = plantedFields[fieldIndex];
+    if (fieldData && isPlantMature(fieldData)) {
+      harvestPlant(fieldIndex); // Call provided harvestPlant function with field index
+    }
+  };
 
-    const intervalId = setInterval(growCrops, 1000); // Check for grown crops every second (adjust interval as needed)
-
-    return () => clearInterval(intervalId); // Cleanup function for the interval
-  }, [plantedFields, growTime]);
+  const isPlantMature = (fieldData) => {
+    return Date.now() - fieldData.plantedAt >= growTime; // Check if plant reached maturity based on growTime
+  };
 
   return (
     <Farm>
-      <h1>Farm</h1>
-      <SeedInventory>
-        <p>Seeds: {seedInventoryState.length}</p>
-        {/* Add dropdown or buttons for seed selection if multiple types exist */}
-      </SeedInventory>
-      <p>Plant seeds and grow your crops.</p>
-      {seeds &&
-        seeds.map((seed, index) => (
+      <h1>My Farm</h1>
+      <FarmGrid>
+        {plantedFields.map((fieldData, index) => (
           <Field
             key={index}
             fieldIndex={index}
-            onClick={() => handlePlantSeed(index)}
-            hasSeed={plantedFields[index] !== null} // Show planted state based on plantedFields
-          />
+            isPlanted={fieldData !== null}
+            onClick={() => (fieldData ? handleHarvest(index) : handlePlantSeed(index))}
+          >
+            {fieldData && <Plant seedId={fieldData.seedId} growthStage={calculateGrowthStage(fieldData.plantedAt)} />}
+          </Field>
         ))}
-      <Button
-        onClick={() => plantSeed()} // Call plantSeed without a specific field index if planting any available seed is allowed
-        disabled={seedInventoryState.length === 0}
-        aria-label="Plant a seed"
-      >
-        Plant seed
-      </Button>
+      </FarmGrid>
+      <InventoryDisplay /> {/* Add InventoryDisplay component */}
+      <Button onClick={() => navigate('/shop')} disabled={inventory.seeds.length === 0}>
+  Visit Shop
+</Button>
+
     </Farm>
   );
 };
