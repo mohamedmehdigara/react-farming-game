@@ -8,6 +8,7 @@ import PlantDialog from "./components/PlantDialog";
 import Leaderboard from "./components/Leaderboard";
 import SeedShop from "./components/SeedShop";
 import FarmStateContext from "./components/FarmStateContext";
+import Shop from "./components/Shop";
 
 import "./App.css";
 
@@ -43,7 +44,7 @@ const harvestedPlants = context && context.harvestedPlants ? context.harvestedPl
         <Leaderboard />
         <PlantDialog open={plantDialogOpen} onClose={closePlantDialog} />
         <SeedShop />
-
+        <Shop/>
       </FarmStateProvider>
 
       <button onClick={openPlantDialog}>Plant a seed</button>
