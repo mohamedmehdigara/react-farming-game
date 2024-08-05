@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useNavigate } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import styled from 'styled-components';
 import Field from './Field';
 import Plant from './Plant';
@@ -61,11 +61,17 @@ const MyFarm = () => {
     return Date.now() - fieldData.plantedAt >= growTime; // Check if plant reached maturity based on growTime
   };
 
+  const calculateGrowthStage = (plantedAt) => {
+    // Logic to calculate growth stage based on plantedAt and growTime
+  };
+
+
+
   return (
     <Farm>
       <h1>My Farm</h1>
       <FarmGrid>
-        {plantedFields.map((fieldData, index) => (
+        {plantedFields&&plantedFields.map((fieldData, index) => (
           <Field
             key={index}
             fieldIndex={index}
@@ -77,9 +83,7 @@ const MyFarm = () => {
         ))}
       </FarmGrid>
       <InventoryDisplay /> {/* Add InventoryDisplay component */}
-      <Button onClick={() => navigate('/shop')} disabled={inventory.seeds.length === 0}>
-  Visit Shop
-</Button>
+     
 
     </Farm>
   );
