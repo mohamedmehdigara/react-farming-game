@@ -32,9 +32,9 @@ const MyFarm = () => {
     plantSeed,
     harvestPlant,
     growTime,
-  } = useContext(FarmStateContext); // Retrieve state from context
+  } = useContext(FarmStateContext);
 
-  // useEffect for initial state or loading saved game (if implemented)
+  // Potential useEffect for fetching initial data or loading saved game
 
   const handlePlantSeed = (fieldIndex) => {
     // Check if field is empty and seed is available
@@ -45,7 +45,6 @@ const MyFarm = () => {
         return newFields;
       });
 
-      // Update seeds inventory (if applicable)
       plantSeed(fieldIndex); // Call the provided plantSeed function
     }
   };
@@ -58,14 +57,13 @@ const MyFarm = () => {
   };
 
   const isPlantMature = (fieldData) => {
-    return Date.now() - fieldData.plantedAt >= growTime; // Check if plant reached maturity based on growTime
+    return Date.now() - fieldData.plantedAt >= growTime;
   };
 
   const calculateGrowthStage = (plantedAt) => {
-    // Logic to calculate growth stage based on plantedAt and growTime
+    // Implement logic to calculate growth stage based on plantedAt and growTime
+    // This could return a percentage, number of stages, or visual representation
   };
-
-
 
   return (
     <Farm>
@@ -76,15 +74,18 @@ const MyFarm = () => {
             key={index}
             fieldIndex={index}
             isPlanted={fieldData !== null}
-            onClick={() => (fieldData ? handleHarvest(index) : handlePlantSeed(index))}
+            onClick={() =>
+              fieldData ? handleHarvest(index) : handlePlantSeed(index)
+            }
           >
             {fieldData && <Plant seedId={fieldData.seedId} growthStage={calculateGrowthStage(fieldData.plantedAt)} />}
           </Field>
         ))}
       </FarmGrid>
-      <InventoryDisplay /> {/* Add InventoryDisplay component */}
-     
-
+      <InventoryDisplay />
+      {/* Add optional features like Shop button or Plant Info button */}
+      {/* <Button onClick={() => navigate('/shop')}>Visit Shop</Button>  */}
+      {/* <Button onClick={() => showPlantInfo(fieldData)}>Plant Info</Button> (if implemented) */}
     </Farm>
   );
 };
