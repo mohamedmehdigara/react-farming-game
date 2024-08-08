@@ -43,13 +43,10 @@ const harvestedPlants = context && context.harvestedPlants ? context.harvestedPl
         <Farm />
         <HarvestedDisplay harvestedPlants={harvestedPlants} />
         <Leaderboard />
-        <PlantDialog open={plantDialogOpen} onClose={closePlantDialog} />
-        <SeedShop />
         <Shop/>
         <Player/>
       </FarmStateProvider>
 
-      <button onClick={openPlantDialog}>Plant a seed</button>
     </div>
   );
 };
