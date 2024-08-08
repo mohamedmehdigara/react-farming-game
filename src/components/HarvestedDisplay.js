@@ -1,46 +1,41 @@
-import React, { useContext } from "react";
-import { FarmStateContext } from "./FarmStateProvider";
+import React, { useContext } from 'react';
+import { FarmStateContext } from './FarmStateProvider';
 
 const HarvestedDisplay = () => {
-  const farmState = useContext(FarmStateContext);
+  const { harvestedPlants } = useContext(FarmStateContext);
 
-  const harvestedPlants = farmState.harvestedPlants;
+  const displayHarvestedPlants = () => {
+    if (harvestedPlants.length === 0) {
+      return <p>No plants have been harvested yet.</p>;
+    }
 
-  // Total harvested plants count with potential formatting
-  const totalHarvestedPlants = harvestedPlants.length.toLocaleString(); // Format number for readability
+    const plantTypeGroups = harvestedPlants.reduce((acc, plant) => {
+      const plantType = plant.type; // Assuming a "type" property on plants
+      acc[plantType] = (acc[plantType] || 0) + 1; // Group by type and count
+      return acc;
+    }, {});
 
-  // Differentiate display based on plant types
-  const plantTypeGroups = harvestedPlants.reduce((acc, plant) => {
-    const plantType = plant.type; // Assuming a "type" property on plants
-    acc[plantType] = (acc[plantType] || 0) + 1; // Group by type and count
-    return acc;
-  }, {});
+    const hasMultipleTypes = Object.keys(plantTypeGroups).length > 1;
 
-  // Display harvested plants with grouping and counts if applicable
-  const harvestedPlantsList = Object.keys(plantTypeGroups).length > 1 ? (
-    <ul>
-      {Object.entries(plantTypeGroups).map(([plantType, count]) => (
-        <li key={plantType}>
-          {count}x {plantType}
-        </li>
-      ))}
-    </ul>
-  ) : (
-    harvestedPlants.length > 0 ? ( // If no grouping, use standard list
+    return (
       <ul>
-        {harvestedPlants.map((plant) => (
-          <li key={plant.name}>{plant.name}</li>
-        ))}
+        {hasMultipleTypes
+          ? Object.entries(plantTypeGroups).map(([plantType, count]) => (
+              <li key={plantType}>
+                {count}x {plantType}
+              </li>
+            ))
+          : harvestedPlants.map((plant) => (
+              <li key={plant.name}>{plant.name}</li>
+            ))}
       </ul>
-    ) : (
-      <p>No plants have been harvested yet.</p>
-    )
-  );
+    );
+  };
 
   return (
     <div>
-      <h2>Harvested Plants ({totalHarvestedPlants})</h2>
-      {harvestedPlantsList}
+      <h2>Harvested Plants ({harvestedPlants.length.toLocaleString()})</h2>
+      {displayHarvestedPlants()}
     </div>
   );
 };
