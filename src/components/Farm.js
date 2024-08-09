@@ -4,7 +4,7 @@ import Field from './Field';
 import Plant from './Plant';
 import Button from './Button';
 import { FarmStateContext } from './FarmStateProvider';
-import InventoryDisplay from './InventoryDisplay'; // Import InventoryDisplay component
+import InventoryDisplay from './InventoryDisplay';
 
 const Farm = styled.div`
   display: flex;
@@ -19,7 +19,7 @@ const Farm = styled.div`
 
 const FarmGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   gap: 10px;
 `;
 
@@ -34,35 +34,28 @@ const MyFarm = () => {
     growTime,
   } = useContext(FarmStateContext);
 
-  // Potential useEffect for fetching initial data or loading saved game
+  // ... other logic
+
+  const handleFieldResize = (fieldIndex, newSize) => {
+    // Update field size in plantedFields state
+    setPlantedFields((prevFields) => {
+      const newFields = [...prevFields];
+      newFields[fieldIndex] = { ...newFields[fieldIndex], size: newSize };
+      return newFields;
+    });
+  };
+
 
   const handlePlantSeed = (fieldIndex) => {
-    // Check if field is empty and seed is available
-    if (plantedFields[fieldIndex] === null && seeds.length > 0) {
-      setPlantedFields((prevFields) => {
-        const newFields = [...prevFields];
-        newFields[fieldIndex] = { seedId: seeds[0].id, plantedAt: Date.now() };
-        return newFields;
-      });
-
-      plantSeed(fieldIndex); // Call the provided plantSeed function
-    }
+    // ...
   };
 
   const handleHarvest = (fieldIndex) => {
-    const fieldData = plantedFields[fieldIndex];
-    if (fieldData && isPlantMature(fieldData)) {
-      harvestPlant(fieldIndex); // Call provided harvestPlant function with field index
-    }
-  };
-
-  const isPlantMature = (fieldData) => {
-    return Date.now() - fieldData.plantedAt >= growTime;
+    // ...
   };
 
   const calculateGrowthStage = (plantedAt) => {
-    // Implement logic to calculate growth stage based on plantedAt and growTime
-    // This could return a percentage, number of stages, or visual representation
+    // Logic to calculate growth stage based on plantedAt and growTime
   };
 
   return (
@@ -74,18 +67,15 @@ const MyFarm = () => {
             key={index}
             fieldIndex={index}
             isPlanted={fieldData !== null}
-            onClick={() =>
-              fieldData ? handleHarvest(index) : handlePlantSeed(index)
-            }
+            onClick={() => (fieldData ? handleHarvest(index) : handlePlantSeed(index))}
+            size={fieldData?.size || 1} // Default size is 1
+            onResize={handleFieldResize}
           >
             {fieldData && <Plant seedId={fieldData.seedId} growthStage={calculateGrowthStage(fieldData.plantedAt)} />}
           </Field>
         ))}
       </FarmGrid>
-      <InventoryDisplay />
-      {/* Add optional features like Shop button or Plant Info button */}
-      {/* <Button onClick={() => navigate('/shop')}>Visit Shop</Button>  */}
-      {/* <Button onClick={() => showPlantInfo(fieldData)}>Plant Info</Button> (if implemented) */}
+      {/* ... */}
     </Farm>
   );
 };
