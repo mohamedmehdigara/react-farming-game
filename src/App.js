@@ -23,16 +23,17 @@ const App = () => {
   const closePlantDialog = () => {
     setPlantDialogOpen(false);
   };
+
   return (
     <div className="App">
       <h1>Farm Game</h1>
       <FarmStateProvider>
         <SeedShop seeds={context.seeds} buySeed={context.buySeed} />
-        <SeedList seeds={context.seeds} onSeedSelect={context.onSeedSelect} />
+        <SeedList seeds={context.Seeds} onSeedSelect={context.onSeedSelect} />
         <Farm />
         <HarvestedDisplay harvestedPlants={context.harvestedPlants} />
         <Leaderboard leaderboardData={context.leaderboardData} />
-        <Shop items={context.items} playerInventory={context.inventory} buyItem={context.buyItem} />
+        <Shop items={context.shopItems} playerInventory={context.playerInventory} buyItem={context.buyItem} />
         <Player playerData={context.playerData} inventory={context.inventory} />
         <PlantDialog open={plantDialogOpen} onClose={closePlantDialog} />
       </FarmStateProvider>
