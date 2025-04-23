@@ -1,9 +1,7 @@
-import React, { useContext } from 'react';
-import { FarmStateContext } from './FarmStateProvider';
+import React from 'react';
 
 const HarvestedDisplay = () => {
-  const { harvestedPlants } = useContext(FarmStateContext);
-
+const harvestedPlants = [];
   const displayHarvestedPlants = () => {
     if (harvestedPlants.length === 0) {
       return <p>No plants have been harvested yet.</p>;

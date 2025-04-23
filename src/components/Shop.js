@@ -1,7 +1,6 @@
-import React, { useContext } from 'react';
+import React, {useState} from 'react';
 import styled from 'styled-components';
 import Button from './Button';
-import { FarmStateContext } from './FarmStateProvider';
 
 const ShopContainer = styled.div`
   display: flex;
@@ -17,12 +16,20 @@ const SeedItem = styled.div`
 `;
 
 const Shop = () => {
-  const { seeds, buySeed } = useContext(FarmStateContext);
+  const seeds = [
+    { id: 101, name: 'Carrot Seeds', price: 5 },
+    { id: 102, name: 'Radish Seeds', price: 8 },
+    { id: 103, name: 'Beetroot Seeds', price: 12 },
+    // Add more seeds for sale
+  ];
 
+
+const [buySeed] = useState();
   const handleBuySeed = (seedId) => {
     // Implement logic to deduct money and add seed to inventory
     buySeed(seedId); // Assuming buySeed function updates inventory
   };
+
 
   return (
     <ShopContainer>

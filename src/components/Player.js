@@ -1,8 +1,6 @@
-import React, { useContext } from 'react';
-import { FarmStateContext } from './FarmStateProvider';
+import React from 'react';
 
 const Player = () => {
-  const { playerData } = useContext(FarmStateContext);
 
   return (
     <div>
