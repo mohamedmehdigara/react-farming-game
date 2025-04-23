@@ -1,29 +1,34 @@
-import React, { createContext, useEffect } from "react";
+import React, { createContext, useState } from 'react';
 
-const FarmStateContext = createContext();
+export const FarmStateContext = createContext();
 
 const FarmStateProvider = ({ children }) => {
-  const [harvestedPlants, setHarvestedPlants] = React.useState([]);
+  const [seeds, setSeeds] = useState([]); // Example state
+  const [plantedSeeds, setPlantedSeeds] = useState({}); // Example state
+  const [selectedSeed, setSelectedSeed] = useState(null); // Example state
 
-  // Define the FarmStateContext context object.
-  const context = {
-    harvestedPlants,
-    setHarvestedPlants,
+  const plantSeed = (fieldIndex, seed) => {
+    // Example function
+    setPlantedSeeds(prev => ({ ...prev, [fieldIndex]: seed }));
+    setSeeds(prev => prev.filter(s => s.name !== seed.name)); // Example logic
   };
 
-  // Added a useEffect hook to initialize the harvestedPlants state variable to an empty array if it is undefined.
-  useEffect(() => {
-    if (!harvestedPlants) {
-      setHarvestedPlants([]);
-    }
-  }, [harvestedPlants]);
+  const value = {
+    seeds,
+    setSeeds,
+    plantedSeeds,
+    setPlantedSeeds,
+    plantSeed,
+    selectedSeed,
+    setSelectedSeed,
+    // ... other context values and functions
+  };
 
   return (
-    <FarmStateContext.Provider value={context}>
+    <FarmStateContext.Provider value={value}>
       {children}
     </FarmStateContext.Provider>
   );
 };
 
-export { FarmStateContext };
 export default FarmStateProvider;
