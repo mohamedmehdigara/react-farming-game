@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import Field from './Field';
+import Tile from './Tile'; // Import the Tile component
 import Plant from './Plant';
 import InventoryDisplay from './InventoryDisplay';
 
@@ -21,10 +21,9 @@ const MyFarm = ({ plantedFields, onPlant, onHarvest, inventory, seeds }) => {
       <Farm>
         {plantedFields &&
           plantedFields.map((fieldData, index) => (
-            <Field
+            <Tile
               key={index}
-              fieldIndex={index}
-              isPlanted={fieldData !== null}
+              type={fieldData ? 'planted' : 'dirt'}
               onClick={() => (fieldData ? onHarvest(index) : onPlant(index))}
             >
               {fieldData && (
@@ -36,7 +35,7 @@ const MyFarm = ({ plantedFields, onPlant, onHarvest, inventory, seeds }) => {
                   }
                 />
               )}
-            </Field>
+            </Tile>
           ))}
       </Farm>
     </div>

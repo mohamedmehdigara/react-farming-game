@@ -14,7 +14,7 @@ const App = () => {
   const [seeds, setSeeds] = useState([
     { id: 1, name: 'Tomato', growTime: 5000 },
     { id: 2, name: 'Corn', growTime: 8000 },
-    // ... more seeds
+    // ... your seed data
   ]);
   const [plantedFields, setPlantedFields] = useState(Array(9).fill(null)); // Example 3x3 farm
   const [inventory, setInventory] = useState({});
@@ -92,6 +92,8 @@ const App = () => {
         plantedFields={plantedFields}
         onPlant={handlePlantButtonClick}
         onHarvest={handleHarvest}
+        inventory={inventory}
+        seeds={seeds} 
       />
       <HarvestedDisplay harvestedPlants={harvestedPlants} />
 
