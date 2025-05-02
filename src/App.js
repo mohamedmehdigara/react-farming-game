@@ -7,6 +7,8 @@ import SeedShop from './components/SeedShop';
 import Shop from './components/Shop';
 import Player from './components/Player';
 import Button from './components/Button';
+import ResourceDisplay from './components/ResourceDisplay'; // Import ResourceDisplay
+
 
 import './App.css';
 
@@ -22,6 +24,11 @@ const App = () => {
   const [isPlanting, setIsPlanting] = useState(false);
   const [selectedFieldIndex, setSelectedFieldIndex] = useState(null);
   const [harvestedPlants, setHarvestedPlants] = useState([]);
+  const [resources, setResources] = useState({
+    money: 100,
+    wood: 20,
+    // ... other resources
+  });
 
   const handlePlantButtonClick = (fieldIndex) => {
     setIsPlanting(true);
@@ -120,6 +127,7 @@ const App = () => {
         <Button onClick={() => { /* Implement delete plant logic */ }} variant="danger">
           Delete Plant
         </Button>
+        <ResourceDisplay resources={resources} />
       </div>
     </div>
   );
