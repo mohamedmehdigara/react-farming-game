@@ -8,6 +8,9 @@ import Shop from './components/Shop';
 import Player from './components/Player';
 import Button from './components/Button';
 import ResourceDisplay from './components/ResourceDisplay'; // Import ResourceDisplay
+import WeatherDisplay from './components/WeatherDisplay';
+import TimeDisplay from './components/TimeDisplay';
+import QuestLog from './components/QuestLog';
 
 
 import './App.css';
@@ -29,6 +32,13 @@ const App = () => {
     wood: 20,
     // ... other resources
   });
+  const [quests, setQuests] = useState([
+    { id: 1, title: 'First Harvest', description: 'Harvest 5 Tomatoes.', reward: '10 Coins', status: 'in progress' },
+    { id: 2, title: 'Plant Corn', description: 'Plant 3 Corn seeds.', status: 'in progress' },
+    { id: 3, title: 'Water Crops', description: 'Water your plants 3 times.', reward: '5 Coins', status: 'completed' },
+    { id: 4, title: 'Expand Farm', description: 'Expand your farm by one tile.', status: 'in progress' },
+    // ... more quests
+  ]);
 
   const handlePlantButtonClick = (fieldIndex) => {
     setIsPlanting(true);
@@ -88,6 +98,16 @@ const App = () => {
     setSeeds(prevSeeds => [...prevSeeds, seedToBuy]);
   };
 
+  const handleQuestComplete = (questId) => {
+    setQuests(prevQuests =>
+      prevQuests.map(quest =>
+        quest.id === questId ? { ...quest, status: 'completed' } : quest
+      )
+    );
+    alert(`Quest "${quests.find(q => q.id === questId)?.title}" completed!`);
+    // Implement reward logic here (e.g., update player resources)
+  };
+
   return (
     <div className="App">
       <h1>Farm Game</h1>
@@ -128,6 +148,12 @@ const App = () => {
           Delete Plant
         </Button>
         <ResourceDisplay resources={resources} />
+        <WeatherDisplay /> {/* Add the WeatherDisplay component */}
+        <TimeDisplay /> {/* Add the TimeDisplay component */}
+        <QuestLog quests={quests} onQuestComplete={handleQuestComplete} />
+
+
+
       </div>
     </div>
   );
