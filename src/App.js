@@ -11,7 +11,7 @@ import ResourceDisplay from './components/ResourceDisplay'; // Import ResourceDi
 import WeatherDisplay from './components/WeatherDisplay';
 import TimeDisplay from './components/TimeDisplay';
 import QuestLog from './components/QuestLog';
-
+import Building from './components/Building';
 
 import './App.css';
 
@@ -39,6 +39,14 @@ const App = () => {
     { id: 4, title: 'Expand Farm', description: 'Expand your farm by one tile.', status: 'in progress' },
     // ... more quests
   ]);
+  // In App.js (example)
+
+  const [buildings, setBuildings] = useState([
+    { type: 'Barn', x: 1, y: 1, width: 150, height: 100 },
+    { type: 'Coop', x: 4, y: 3 },
+    // ... more buildings
+  ]);
+
 
   const handlePlantButtonClick = (fieldIndex) => {
     setIsPlanting(true);
@@ -151,6 +159,18 @@ const App = () => {
         <WeatherDisplay /> {/* Add the WeatherDisplay component */}
         <TimeDisplay /> {/* Add the TimeDisplay component */}
         <QuestLog quests={quests} onQuestComplete={handleQuestComplete} />
+        {buildings &&
+          buildings.map(building => (
+            <Building
+              key={building.type + building.x + building.y}
+              type={building.type}
+              x={building.x}
+              y={building.y}
+              width={building.width}
+              height={building.height}
+              onClick={() => console.log(`Clicked on ${building.type} at ${building.x}, ${building.y}`)}
+            />
+          ))}
 
 
 
