@@ -123,6 +123,18 @@ const [animals, setAnimals] = useState([
     // Implement reward logic here (e.g., update player resources)
   };
 
+  const handleBuildingClick = (building) => {
+    alert(`Clicked on ${building.type} at (${building.x}, ${building.y})`);
+    // Implement specific actions based on the building type
+  };
+
+  // Animal Interaction Logic (Example - you'll expand this)
+  const handleAnimalInteract = (animalData) => {
+    alert(`Interacted with ${animalData.type} at (${animalData.x}, ${animalData.y})`);
+    // Implement actions like feeding, collecting resources
+  };
+
+
   return (
     <div className="App">
       <h1>Farm Game</h1>
@@ -136,6 +148,8 @@ const [animals, setAnimals] = useState([
         onHarvest={handleHarvest}
         inventory={inventory}
         seeds={seeds} 
+        buildings={buildings}
+        animals={animals}
       />
       <HarvestedDisplay harvestedPlants={harvestedPlants} />
 
