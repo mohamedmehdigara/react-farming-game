@@ -12,6 +12,7 @@ import WeatherDisplay from './components/WeatherDisplay';
 import TimeDisplay from './components/TimeDisplay';
 import QuestLog from './components/QuestLog';
 import Building from './components/Building';
+import CraftingMenu from './components/CraftingMenu';
 
 import './App.css';
 
@@ -52,6 +53,22 @@ const [animals, setAnimals] = useState([
   { type: 'chicken', x: 2, y: 5 },
   { type: 'cow', x: 6, y: 2, size: '80px', color: '#d3d3d3' },
   // ... more animals
+]);
+
+const [recipes] = useState([
+  {
+    id: 301,
+    name: 'Wooden Fence',
+    ingredients: [{ item: 'wood', quantity: 3 }],
+    result: { item: 'wooden_fence', quantity: 1 },
+  },
+  {
+    id: 302,
+    name: 'Basic Fertilizer',
+    ingredients: [{ item: 'plant_fiber', quantity: 2 }],
+    result: { item: 'basic_fertilizer', quantity: 1 },
+  },
+  // ... more recipes
 ]);
 
 
@@ -134,6 +151,37 @@ const [animals, setAnimals] = useState([
     // Implement actions like feeding, collecting resources
   };
 
+  const handleCraft = (recipeId) => {
+    const selectedRecipe = recipes.find(recipe => recipe.id === recipeId);
+    if (selectedRecipe) {
+      const canCraft = selectedRecipe.ingredients.every(
+        (ingredient) => inventory[ingredient.item] >= ingredient.quantity
+      );
+  
+      if (canCraft) {
+        // Deduct ingredients from inventory
+        const newInventory = { ...inventory };
+        selectedRecipe.ingredients.forEach((ingredient) => {
+          newInventory[ingredient.item] -= ingredient.quantity;
+          if (newInventory[ingredient.item] === 0) {
+            delete newInventory[ingredient.item];
+          }
+        });
+        setInventory(newInventory);
+  
+        // Add result to inventory
+        setInventory(prevInventory => ({
+          ...prevInventory,
+          [selectedRecipe.result.item]: (prevInventory[selectedRecipe.result.item] || 0) + selectedRecipe.result.quantity,
+        }));
+  
+        alert(`Crafted ${selectedRecipe.result.quantity} ${selectedRecipe.result.item}!`);
+      } else {
+        alert(`Not enough resources to craft ${selectedRecipe.name}.`);
+      }
+    }
+  };
+
 
   return (
     <div className="App">
@@ -193,7 +241,7 @@ const [animals, setAnimals] = useState([
             />
           ))}
 
-
+            <CraftingMenu inventory={inventory} recipes={recipes} onCraft={handleCraft} />
 
       </div>
     </div>
