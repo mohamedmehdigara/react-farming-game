@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import Tile from './Tile'; // Import the Tile component
 import Plant from './Plant';
 import InventoryDisplay from './InventoryDisplay';
+import Animal from './Animal';
 
 const Farm = styled.div`
   display: grid;
@@ -13,7 +14,9 @@ const Farm = styled.div`
   margin: 20px auto;
 `;
 
-const MyFarm = ({ plantedFields, onPlant, onHarvest, inventory, seeds }) => {
+
+
+const MyFarm = ({ plantedFields, onPlant, onHarvest, inventory, seeds, buildings, animals }) => {
   return (
     <div>
       <h2>My Farm</h2>
@@ -36,6 +39,19 @@ const MyFarm = ({ plantedFields, onPlant, onHarvest, inventory, seeds }) => {
                 />
               )}
             </Tile>
+          ))}
+
+{animals &&
+          animals.map(animal => (
+            <Animal
+              key={`<span class="math-inline">\{animal\.type\}\-</span>{animal.x}-${animal.y}`}
+              type={animal.type}
+              x={animal.x}
+              y={animal.y}
+              size={animal.size}
+              color={animal.color}
+              onInteract={(animalData) => console.log(`Interacted with ${animalData.type} at ${animalData.x}, ${animalData.y}`)}
+            />
           ))}
       </Farm>
     </div>

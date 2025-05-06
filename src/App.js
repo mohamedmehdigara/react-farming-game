@@ -47,6 +47,13 @@ const App = () => {
     // ... more buildings
   ]);
 
+  // In App.js (example)
+const [animals, setAnimals] = useState([
+  { type: 'chicken', x: 2, y: 5 },
+  { type: 'cow', x: 6, y: 2, size: '80px', color: '#d3d3d3' },
+  // ... more animals
+]);
+
 
   const handlePlantButtonClick = (fieldIndex) => {
     setIsPlanting(true);
