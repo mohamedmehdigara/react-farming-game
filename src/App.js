@@ -71,6 +71,9 @@ const [recipes] = useState([
   // ... more recipes
 ]);
 
+const [selectedQuest, setSelectedQuest] = useState(null);
+const [isQuestDetailOpen, setIsQuestDetailOpen] = useState(false);
+
 
   const handlePlantButtonClick = (fieldIndex) => {
     setIsPlanting(true);
@@ -182,6 +185,18 @@ const [recipes] = useState([
     }
   };
 
+const openQuestDetail = (questId) => {
+  const questToView = quests.find(q => q.id === questId);
+  setSelectedQuest(questToView);
+  setIsQuestDetailOpen(true);
+};
+
+const closeQuestDetail = () => {
+  setSelectedQuest(null);
+  setIsQuestDetailOpen(false);
+};
+
+
 
   return (
     <div className="App">
@@ -227,7 +242,7 @@ const [recipes] = useState([
         <ResourceDisplay resources={resources} />
         <WeatherDisplay /> {/* Add the WeatherDisplay component */}
         <TimeDisplay /> {/* Add the TimeDisplay component */}
-        <QuestLog quests={quests} onQuestComplete={handleQuestComplete} />
+        <QuestLog quests={quests} onQuestComplete={handleQuestComplete} onOpenQuestDetail={openQuestDetail} />
         {buildings &&
           buildings.map(building => (
             <Building
@@ -242,6 +257,8 @@ const [recipes] = useState([
           ))}
 
             <CraftingMenu inventory={inventory} recipes={recipes} onCraft={handleCraft} />
+
+
 
       </div>
     </div>

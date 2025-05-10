@@ -20,6 +20,7 @@ const QuestItem = styled.div`
   border-bottom: 1px solid #eee;
   padding-bottom: 10px;
   margin-bottom: 10px;
+  cursor: pointer; /* Indicate it's clickable */
 
   &:last-child {
     border-bottom: none;
@@ -54,7 +55,7 @@ const QuestStatus = styled.span`
   }
 `;
 
-const QuestLog = ({ quests, onQuestComplete }) => {
+const QuestLog = ({ quests, onQuestComplete, onOpenQuestDetail }) => {
   const [expanded, setExpanded] = useState(false);
 
   const toggleExpand = () => {
@@ -80,13 +81,13 @@ const QuestLog = ({ quests, onQuestComplete }) => {
         )}
       </QuestTitle>
       {visibleQuests.map((quest) => (
-        <QuestItem key={quest.id}>
+        <QuestItem key={quest.id} onClick={() => onOpenQuestDetail(quest.id)}>
           <h4>{quest.title}</h4>
           <QuestDescription>{quest.description}</QuestDescription>
           {quest.reward && <QuestReward>Reward: {quest.reward}</QuestReward>}
           <QuestStatus className={quest.status}>{quest.status.charAt(0).toUpperCase() + quest.status.slice(1)}</QuestStatus>
           {quest.status !== 'completed' && (
-            <Button onClick={() => handleCompleteQuest(quest.id)} variant="success" style={{ marginTop: '5px', fontSize: '0.8em' }}>
+            <Button onClick={(e) => { e.stopPropagation(); handleCompleteQuest(quest.id); }} variant="success" style={{ marginTop: '5px', fontSize: '0.8em' }}>
               Complete
             </Button>
           )}
