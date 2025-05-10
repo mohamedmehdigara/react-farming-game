@@ -13,6 +13,8 @@ import TimeDisplay from './components/TimeDisplay';
 import QuestLog from './components/QuestLog';
 import Building from './components/Building';
 import CraftingMenu from './components/CraftingMenu';
+import InventoryDisplay from './components/InventoryDisplay';
+import BuildingInteractionPanel from './components/BuildingInteractionPanel';
 
 import './App.css';
 
@@ -73,6 +75,8 @@ const [recipes] = useState([
 
 const [selectedQuest, setSelectedQuest] = useState(null);
 const [isQuestDetailOpen, setIsQuestDetailOpen] = useState(false);
+const [selectedBuilding, setSelectedBuilding] = useState(null);
+const [isBuildingPanelOpen, setIsBuildingPanelOpen] = useState(false);
 
 
   const handlePlantButtonClick = (fieldIndex) => {
@@ -196,7 +200,33 @@ const closeQuestDetail = () => {
   setIsQuestDetailOpen(false);
 };
 
+const openBuildingPanel = (building) => {
+  setSelectedBuilding(building);
+  setIsBuildingPanelOpen(true);
+};
 
+const closeBuildingPanel = () => {
+  setSelectedBuilding(null);
+  setIsBuildingPanelOpen(false);
+};
+
+const handleBuildingAction = (building, action) => {
+    console.log(`Action "${action}" on ${building.type} at (${building.x}, ${building.y})`);
+    if (action === 'collect' && building.type === 'Coop') {
+      setInventory(prevInventory => ({ ...prevInventory, 'Egg': (prevInventory['Egg'] || 0) + 3 }));
+    } else if (action === 'enter' && building.type === 'Barn') {
+      alert('Entered the barn!');
+      // Potentially open a new UI or update game state
+    } else if (action === 'storage' && building.type === 'Barn') {
+      alert('Opened barn storage!');
+      // Potentially open an inventory view specific to the barn
+    } else if (action === 'feed' && building.type === 'Coop') {
+      // Logic to feed chickens
+      setResources(prevResources => ({ ...prevResources, money: prevResources.money - 5 })); // Example cost
+      alert('Chickens fed!');
+    }
+    onCloseBuildingPanel(); // Close the panel after performing the action
+  };
 
   return (
     <div className="App">
@@ -204,6 +234,8 @@ const closeQuestDetail = () => {
       <Player inventory={inventory} />
       <SeedShop onBuySeed={handleBuySeed} />
       <Shop />
+      <InventoryDisplay inventory={inventory} /> {/* Or as a separate display */}
+
       <Leaderboard />
       <Farm
         plantedFields={plantedFields}
@@ -256,11 +288,19 @@ const closeQuestDetail = () => {
             />
           ))}
 
-            <CraftingMenu inventory={inventory} recipes={recipes} onCraft={handleCraft} />
 
 
 
       </div>
+                  <CraftingMenu inventory={inventory} recipes={recipes} onCraft={handleCraft} />
+
+      {isBuildingPanelOpen && (
+    <BuildingInteractionPanel
+      building={selectedBuilding}
+      onClose={closeBuildingPanel}
+      onAction={handleBuildingAction}
+    />
+  )}
     </div>
   );
 };

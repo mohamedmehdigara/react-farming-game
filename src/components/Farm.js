@@ -4,6 +4,7 @@ import Tile from './Tile'; // Import the Tile component
 import Plant from './Plant';
 import InventoryDisplay from './InventoryDisplay';
 import Animal from './Animal';
+import Building from './Building';
 
 const Farm = styled.div`
   display: grid;
@@ -53,6 +54,18 @@ const MyFarm = ({ plantedFields, onPlant, onHarvest, inventory, seeds, buildings
               onInteract={(animalData) => console.log(`Interacted with ${animalData.type} at ${animalData.x}, ${animalData.y}`)}
             />
           ))}
+
+          {buildings &&
+  buildings.map(building => (
+    <Building
+      key={`<span class="math-inline">\{building\.type\}\-</span>{building.x}-${building.y}`}
+      type={building.type}
+      x={building.x}
+      y={building.y}
+      width={building.width}
+      height={building.height}
+    />
+  ))}
       </Farm>
     </div>
   );
