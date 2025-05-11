@@ -15,6 +15,7 @@ import Building from './components/Building';
 import CraftingMenu from './components/CraftingMenu';
 import InventoryDisplay from './components/InventoryDisplay';
 import BuildingInteractionPanel from './components/BuildingInteractionPanel';
+import AnimalInteractionPanel from './components/AnimalInteractionPanel';
 
 import './App.css';
 
@@ -77,6 +78,8 @@ const [selectedQuest, setSelectedQuest] = useState(null);
 const [isQuestDetailOpen, setIsQuestDetailOpen] = useState(false);
 const [selectedBuilding, setSelectedBuilding] = useState(null);
 const [isBuildingPanelOpen, setIsBuildingPanelOpen] = useState(false);
+const [selectedAnimal, setSelectedAnimal] = useState(null);
+const [isAnimalPanelOpen, setIsAnimalPanelOpen] = useState(false);
 
 
   const handlePlantButtonClick = (fieldIndex) => {
@@ -210,7 +213,7 @@ const closeBuildingPanel = () => {
   setIsBuildingPanelOpen(false);
 };
 
-const handleBuildingAction = (building, action) => {
+ const handleBuildingAction = (building, action) => {
     console.log(`Action "${action}" on ${building.type} at (${building.x}, ${building.y})`);
     if (action === 'collect' && building.type === 'Coop') {
       setInventory(prevInventory => ({ ...prevInventory, 'Egg': (prevInventory['Egg'] || 0) + 3 }));
@@ -225,8 +228,36 @@ const handleBuildingAction = (building, action) => {
       setResources(prevResources => ({ ...prevResources, money: prevResources.money - 5 })); // Example cost
       alert('Chickens fed!');
     }
-    onCloseBuildingPanel(); // Close the panel after performing the action
+    closeBuildingPanel(); // Correctly call the closeBuildingPanel function
   };
+
+  const openAnimalPanel = (animal) => {
+  setSelectedAnimal(animal);
+  setIsAnimalPanelOpen(true);
+};
+
+const closeAnimalPanel = () => {
+  setSelectedAnimal(null);
+  setIsAnimalPanelOpen(false);
+};
+
+const handleAnimalAction = (animal, action) => {
+  console.log(`Action "${action}" on <span class="math-inline">\{animal\.type\} at \(</span>{animal.x}, ${animal.y})`);
+  if (action === 'feed' && animal.type === 'chicken') {
+    setResources(prevResources => ({ ...prevResources, money: prevResources.money - 2 }));
+    alert('Chicken fed!');
+    // Update animal state if needed (e.g., lastFed)
+  } else if (action === 'collect' && animal.type === 'chicken') {
+    setInventory(prevInventory => ({ ...prevInventory, 'Egg': (prevInventory['Egg'] || 0) + 1 }));
+    alert('Collected an egg!');
+    // Update animal state if needed (e.g., canCollectAgainAt)
+  } else if (action === 'milk' && animal.type === 'cow') {
+    setInventory(prevInventory => ({ ...prevInventory, 'Milk': (prevInventory['Milk'] || 0) + 1 }));
+    alert('Milked the cow!');
+  }
+  // ... handle other animal actions
+  closeAnimalPanel();
+};
 
   return (
     <div className="App">
@@ -299,6 +330,14 @@ const handleBuildingAction = (building, action) => {
       building={selectedBuilding}
       onClose={closeBuildingPanel}
       onAction={handleBuildingAction}
+    />
+  )}
+
+   {isAnimalPanelOpen && (
+    <AnimalInteractionPanel
+      animal={selectedAnimal}
+      onClose={closeAnimalPanel}
+      onAction={handleAnimalAction}
     />
   )}
     </div>

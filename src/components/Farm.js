@@ -66,6 +66,18 @@ const MyFarm = ({ plantedFields, onPlant, onHarvest, inventory, seeds, buildings
       height={building.height}
     />
   ))}
+
+  {animals &&
+  animals.map(animal => (
+    <Animal
+      key={`<span class="math-inline">\{animal\.type\}\-</span>{animal.x}-${animal.y}`}
+      type={animal.type}
+      x={animal.x}
+      y={animal.y}
+      size={animal.size}
+      color={animal.color}
+    />
+  ))}
       </Farm>
     </div>
   );
