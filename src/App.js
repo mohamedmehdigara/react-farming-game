@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import SeedList from './components/SeedList';
 import Farm from './components/Farm';
 import HarvestedDisplay from './components/HarvestedDisplay';
@@ -7,25 +7,25 @@ import SeedShop from './components/SeedShop';
 import Shop from './components/Shop';
 import Player from './components/Player';
 import Button from './components/Button';
-import ResourceDisplay from './components/ResourceDisplay'; // Import ResourceDisplay
-import WeatherDisplay from './components/WeatherDisplay';
-import TimeDisplay from './components/TimeDisplay';
+import ResourceDisplay from './components/ResourceDisplay';
 import QuestLog from './components/QuestLog';
 import Building from './components/Building';
 import CraftingMenu from './components/CraftingMenu';
 import InventoryDisplay from './components/InventoryDisplay';
 import BuildingInteractionPanel from './components/BuildingInteractionPanel';
 import AnimalInteractionPanel from './components/AnimalInteractionPanel';
+import TimeAndSeasons from './components/TimeAndSeasons'; // Import the new component
 
 import './App.css';
 
 const App = () => {
   const [seeds, setSeeds] = useState([
-    { id: 1, name: 'Tomato', growTime: 5000 },
-    { id: 2, name: 'Corn', growTime: 8000 },
-    // ... your seed data
+    { id: 1, name: 'Tomato', growTime: 5000, seasons: ['summer'] },
+    { id: 2, name: 'Corn', growTime: 8000, seasons: ['summer', 'fall'] },
+    { id: 3, name: 'Pumpkin', growTime: 10000, seasons: ['fall'] },
+    { id: 4, name: 'Potato', growTime: 6000, seasons: ['spring', 'summer'] },
   ]);
-  const [plantedFields, setPlantedFields] = useState(Array(9).fill(null)); // Example 3x3 farm
+  const [plantedFields, setPlantedFields] = useState(Array(9).fill(null));
   const [inventory, setInventory] = useState({});
   const [selectedSeed, setSelectedSeed] = useState(null);
   const [isPlanting, setIsPlanting] = useState(false);
@@ -34,53 +34,81 @@ const App = () => {
   const [resources, setResources] = useState({
     money: 100,
     wood: 20,
-    // ... other resources
   });
   const [quests, setQuests] = useState([
-    { id: 1, title: 'First Harvest', description: 'Harvest 5 Tomatoes.', reward: '10 Coins', status: 'in progress' },
-    { id: 2, title: 'Plant Corn', description: 'Plant 3 Corn seeds.', status: 'in progress' },
-    { id: 3, title: 'Water Crops', description: 'Water your plants 3 times.', reward: '5 Coins', status: 'completed' },
-    { id: 4, title: 'Expand Farm', description: 'Expand your farm by one tile.', status: 'in progress' },
-    // ... more quests
+    { id: 1, title: 'First Harvest', description: 'Harvest 5 Tomatoes.', reward: '10 Coins', status: 'in progress', goal: { type: 'harvest', itemId: 1, quantity: 5, current: 0 } },
+    { id: 2, title: 'Plant Corn', description: 'Plant 3 Corn seeds.', status: 'in progress', goal: { type: 'plant', itemId: 2, quantity: 3, current: 0 } },
+    { id: 3, title: 'Water Crops', description: 'Water your plants 3 times.', reward: '5 Coins', status: 'completed', goal: { type: 'water', quantity: 3, current: 3 } },
+    { id: 4, title: 'Expand Farm', description: 'Expand your farm by one tile.', status: 'in progress', goal: { type: 'expandFarm', quantity: 1, current: 0 } },
   ]);
-  // In App.js (example)
-
   const [buildings, setBuildings] = useState([
     { type: 'Barn', x: 1, y: 1, width: 150, height: 100 },
     { type: 'Coop', x: 4, y: 3 },
-    // ... more buildings
   ]);
+  const [animals, setAnimals] = useState([
+    { type: 'chicken', x: 2, y: 5 },
+    { type: 'cow', x: 6, y: 2, size: '80px', color: '#d3d3d3' },
+  ]);
+  const [recipes] = useState([
+    {
+      id: 301,
+      name: 'Wooden Fence',
+      ingredients: [{ item: 'wood', quantity: 3 }],
+      result: { item: 'wooden_fence', quantity: 1 },
+    },
+    {
+      id: 302,
+      name: 'Basic Fertilizer',
+      ingredients: [{ item: 'plant_fiber', quantity: 2 }],
+      result: { item: 'basic_fertilizer', quantity: 1 },
+    },
+  ]);
+  const [selectedQuest, setSelectedQuest] = useState(null);
+  const [isQuestDetailOpen, setIsQuestDetailOpen] = useState(false);
+  const [selectedBuilding, setSelectedBuilding] = useState(null);
+  const [isBuildingPanelOpen, setIsBuildingPanelOpen] = useState(false);
+  const [selectedAnimal, setSelectedAnimal] = useState(null);
+  const [isAnimalPanelOpen, setIsAnimalPanelOpen] = useState(false);
+  const [playerPos, setPlayerPos] = useState({ x: 0, y: 0 });
+  const [playerName, setPlayerName] = useState('Farmer Joe');
 
-  // In App.js (example)
-const [animals, setAnimals] = useState([
-  { type: 'chicken', x: 2, y: 5 },
-  { type: 'cow', x: 6, y: 2, size: '80px', color: '#d3d3d3' },
-  // ... more animals
-]);
+  // New state for seasonal effects
+  const [currentSeason, setCurrentSeason] = useState('spring');
+  const [day, setDay] = useState(1);
 
-const [recipes] = useState([
-  {
-    id: 301,
-    name: 'Wooden Fence',
-    ingredients: [{ item: 'wood', quantity: 3 }],
-    result: { item: 'wooden_fence', quantity: 1 },
-  },
-  {
-    id: 302,
-    name: 'Basic Fertilizer',
-    ingredients: [{ item: 'plant_fiber', quantity: 2 }],
-    result: { item: 'basic_fertilizer', quantity: 1 },
-  },
-  // ... more recipes
-]);
+  // New useEffect to handle seasonal changes
+  useEffect(() => {
+    const seasonLength = 10; // Days per season for example
+    const dayInterval = setInterval(() => {
+      setDay(prevDay => {
+        const newDay = prevDay + 1;
+        if (newDay > seasonLength) {
+          const seasons = ['spring', 'summer', 'fall', 'winter'];
+          const currentSeasonIndex = seasons.indexOf(currentSeason);
+          const nextSeason = seasons[(currentSeasonIndex + 1) % seasons.length];
+          setCurrentSeason(nextSeason);
 
-const [selectedQuest, setSelectedQuest] = useState(null);
-const [isQuestDetailOpen, setIsQuestDetailOpen] = useState(false);
-const [selectedBuilding, setSelectedBuilding] = useState(null);
-const [isBuildingPanelOpen, setIsBuildingPanelOpen] = useState(false);
-const [selectedAnimal, setSelectedAnimal] = useState(null);
-const [isAnimalPanelOpen, setIsAnimalPanelOpen] = useState(false);
+          // Handle crops dying at the end of a season
+          if (nextSeason === 'spring') {
+            setPlantedFields(prevFields =>
+              prevFields.map(field => {
+                const seedData = seeds.find(s => s.id === field?.seedId);
+                if (seedData && !seedData.seasons.includes(currentSeason)) {
+                  // Crop dies
+                  return null;
+                }
+                return field;
+              })
+            );
+          }
+          return 1;
+        }
+        return newDay;
+      });
+    }, 5000); // A "day" lasts for 5 seconds
 
+    return () => clearInterval(dayInterval);
+  }, [currentSeason, seeds]);
 
   const handlePlantButtonClick = (fieldIndex) => {
     setIsPlanting(true);
@@ -91,8 +119,15 @@ const [isAnimalPanelOpen, setIsAnimalPanelOpen] = useState(false);
     setSelectedSeed(seed);
   };
 
+  // Updated handlePlantConfirm to check for seasons
   const handlePlantConfirm = () => {
     if (isPlanting && selectedSeed !== null && selectedFieldIndex !== null && !plantedFields[selectedFieldIndex]) {
+      // Check if the seed can be planted in the current season
+      if (selectedSeed.seasons && !selectedSeed.seasons.includes(currentSeason)) {
+        alert(`${selectedSeed.name} seeds can't be planted in the ${currentSeason}.`);
+        return;
+      }
+      
       const newPlantedFields = [...plantedFields];
       newPlantedFields[selectedFieldIndex] = {
         seedId: selectedSeed.id,
@@ -100,10 +135,18 @@ const [isAnimalPanelOpen, setIsAnimalPanelOpen] = useState(false);
         growTime: selectedSeed.growTime,
       };
       setPlantedFields(newPlantedFields);
-      setSeeds(prevSeeds => prevSeeds.filter(s => s.id !== selectedSeed.id)); // Remove planted seed
+      setSeeds(prevSeeds => prevSeeds.filter(s => s.id !== selectedSeed.id));
       setIsPlanting(false);
       setSelectedSeed(null);
       setSelectedFieldIndex(null);
+
+      setQuests(prevQuests =>
+        prevQuests.map(quest =>
+          quest.goal?.type === 'plant' && quest.goal?.itemId === selectedSeed.id && quest.status !== 'completed'
+            ? { ...quest, goal: { ...quest.goal, current: quest.goal.current + 1 } }
+            : quest
+        )
+      );
     } else if (plantedFields[selectedFieldIndex]) {
       alert("This field is already planted.");
     } else if (!selectedSeed) {
@@ -147,18 +190,14 @@ const [isAnimalPanelOpen, setIsAnimalPanelOpen] = useState(false);
       )
     );
     alert(`Quest "${quests.find(q => q.id === questId)?.title}" completed!`);
-    // Implement reward logic here (e.g., update player resources)
   };
 
   const handleBuildingClick = (building) => {
     alert(`Clicked on ${building.type} at (${building.x}, ${building.y})`);
-    // Implement specific actions based on the building type
   };
 
-  // Animal Interaction Logic (Example - you'll expand this)
   const handleAnimalInteract = (animalData) => {
     alert(`Interacted with ${animalData.type} at (${animalData.x}, ${animalData.y})`);
-    // Implement actions like feeding, collecting resources
   };
 
   const handleCraft = (recipeId) => {
@@ -169,7 +208,6 @@ const [isAnimalPanelOpen, setIsAnimalPanelOpen] = useState(false);
       );
   
       if (canCraft) {
-        // Deduct ingredients from inventory
         const newInventory = { ...inventory };
         selectedRecipe.ingredients.forEach((ingredient) => {
           newInventory[ingredient.item] -= ingredient.quantity;
@@ -178,13 +216,10 @@ const [isAnimalPanelOpen, setIsAnimalPanelOpen] = useState(false);
           }
         });
         setInventory(newInventory);
-  
-        // Add result to inventory
         setInventory(prevInventory => ({
           ...prevInventory,
           [selectedRecipe.result.item]: (prevInventory[selectedRecipe.result.item] || 0) + selectedRecipe.result.quantity,
         }));
-  
         alert(`Crafted ${selectedRecipe.result.quantity} ${selectedRecipe.result.item}!`);
       } else {
         alert(`Not enough resources to craft ${selectedRecipe.name}.`);
@@ -192,90 +227,85 @@ const [isAnimalPanelOpen, setIsAnimalPanelOpen] = useState(false);
     }
   };
 
-const openQuestDetail = (questId) => {
-  const questToView = quests.find(q => q.id === questId);
-  setSelectedQuest(questToView);
-  setIsQuestDetailOpen(true);
-};
+  const openQuestDetail = (questId) => {
+    const questToView = quests.find(q => q.id === questId);
+    setSelectedQuest(questToView);
+    setIsQuestDetailOpen(true);
+  };
 
-const closeQuestDetail = () => {
-  setSelectedQuest(null);
-  setIsQuestDetailOpen(false);
-};
+  const closeQuestDetail = () => {
+    setSelectedQuest(null);
+    setIsQuestDetailOpen(false);
+  };
 
-const openBuildingPanel = (building) => {
-  setSelectedBuilding(building);
-  setIsBuildingPanelOpen(true);
-};
+  const openBuildingPanel = (building) => {
+    setSelectedBuilding(building);
+    setIsBuildingPanelOpen(true);
+  };
 
-const closeBuildingPanel = () => {
-  setSelectedBuilding(null);
-  setIsBuildingPanelOpen(false);
-};
+  const closeBuildingPanel = () => {
+    setSelectedBuilding(null);
+    setIsBuildingPanelOpen(false);
+  };
 
- const handleBuildingAction = (building, action) => {
+  const handleBuildingAction = (building, action) => {
     console.log(`Action "${action}" on ${building.type} at (${building.x}, ${building.y})`);
     if (action === 'collect' && building.type === 'Coop') {
       setInventory(prevInventory => ({ ...prevInventory, 'Egg': (prevInventory['Egg'] || 0) + 3 }));
     } else if (action === 'enter' && building.type === 'Barn') {
       alert('Entered the barn!');
-      // Potentially open a new UI or update game state
     } else if (action === 'storage' && building.type === 'Barn') {
       alert('Opened barn storage!');
-      // Potentially open an inventory view specific to the barn
     } else if (action === 'feed' && building.type === 'Coop') {
-      // Logic to feed chickens
-      setResources(prevResources => ({ ...prevResources, money: prevResources.money - 5 })); // Example cost
+      setResources(prevResources => ({ ...prevResources, money: prevResources.money - 5 }));
       alert('Chickens fed!');
     }
-    closeBuildingPanel(); // Correctly call the closeBuildingPanel function
+    closeBuildingPanel();
   };
 
   const openAnimalPanel = (animal) => {
-  setSelectedAnimal(animal);
-  setIsAnimalPanelOpen(true);
-};
+    setSelectedAnimal(animal);
+    setIsAnimalPanelOpen(true);
+  };
 
-const closeAnimalPanel = () => {
-  setSelectedAnimal(null);
-  setIsAnimalPanelOpen(false);
-};
+  const closeAnimalPanel = () => {
+    setSelectedAnimal(null);
+    setIsAnimalPanelOpen(false);
+  };
 
-const handleAnimalAction = (animal, action) => {
-  console.log(`Action "${action}" on <span class="math-inline">\{animal\.type\} at \(</span>{animal.x}, ${animal.y})`);
-  if (action === 'feed' && animal.type === 'chicken') {
-    setResources(prevResources => ({ ...prevResources, money: prevResources.money - 2 }));
-    alert('Chicken fed!');
-    // Update animal state if needed (e.g., lastFed)
-  } else if (action === 'collect' && animal.type === 'chicken') {
-    setInventory(prevInventory => ({ ...prevInventory, 'Egg': (prevInventory['Egg'] || 0) + 1 }));
-    alert('Collected an egg!');
-    // Update animal state if needed (e.g., canCollectAgainAt)
-  } else if (action === 'milk' && animal.type === 'cow') {
-    setInventory(prevInventory => ({ ...prevInventory, 'Milk': (prevInventory['Milk'] || 0) + 1 }));
-    alert('Milked the cow!');
-  }
-  // ... handle other animal actions
-  closeAnimalPanel();
-};
+  const handleAnimalAction = (animal, action) => {
+    console.log(`Action "${action}" on ${animal.type} at (${animal.x}, ${animal.y})`);
+    if (action === 'feed' && animal.type === 'chicken') {
+      setResources(prevResources => ({ ...prevResources, money: prevResources.money - 2 }));
+      alert('Chicken fed!');
+    } else if (action === 'collect' && animal.type === 'chicken') {
+      setInventory(prevInventory => ({ ...prevInventory, 'Egg': (prevInventory['Egg'] || 0) + 1 }));
+      alert('Collected an egg!');
+    } else if (action === 'milk' && animal.type === 'cow') {
+      setInventory(prevInventory => ({ ...prevInventory, 'Milk': (prevInventory['Milk'] || 0) + 1 }));
+      alert('Milked the cow!');
+    }
+    closeAnimalPanel();
+  };
 
   return (
     <div className="App">
       <h1>Farm Game</h1>
       <Player inventory={inventory} />
-      <SeedShop onBuySeed={handleBuySeed} />
+      <TimeAndSeasons day={day} season={currentSeason} />
+      <SeedShop onBuySeed={handleBuySeed} currentSeason={currentSeason} />
       <Shop />
-      <InventoryDisplay inventory={inventory} /> {/* Or as a separate display */}
-
+      <InventoryDisplay inventory={inventory} />
       <Leaderboard />
       <Farm
         plantedFields={plantedFields}
         onPlant={handlePlantButtonClick}
         onHarvest={handleHarvest}
         inventory={inventory}
-        seeds={seeds} 
+        seeds={seeds}
         buildings={buildings}
         animals={animals}
+        season={currentSeason}
       />
       <HarvestedDisplay harvestedPlants={harvestedPlants} />
 
@@ -298,48 +328,39 @@ const handleAnimalAction = (animal, action) => {
         <Button onClick={() => setIsPlanting(!isPlanting)} variant="primary">
           {isPlanting ? 'Cancel Planting' : 'Plant'}
         </Button>
-        {/* Delete logic can be implemented here or within the Farm/Field components */}
         <Button onClick={() => { /* Implement delete plant logic */ }} variant="danger">
           Delete Plant
         </Button>
         <ResourceDisplay resources={resources} />
-        <WeatherDisplay /> {/* Add the WeatherDisplay component */}
-        <TimeDisplay /> {/* Add the TimeDisplay component */}
         <QuestLog quests={quests} onQuestComplete={handleQuestComplete} onOpenQuestDetail={openQuestDetail} />
-        {buildings &&
-          buildings.map(building => (
-            <Building
-              key={building.type + building.x + building.y}
-              type={building.type}
-              x={building.x}
-              y={building.y}
-              width={building.width}
-              height={building.height}
-              onClick={() => console.log(`Clicked on ${building.type} at ${building.x}, ${building.y}`)}
-            />
-          ))}
-
-
-
-
+        {buildings.map(building => (
+          <Building
+            key={building.type + building.x + building.y}
+            type={building.type}
+            x={building.x}
+            y={building.y}
+            width={building.width}
+            height={building.height}
+            onClick={() => openBuildingPanel(building)}
+          />
+        ))}
       </div>
-                  <CraftingMenu inventory={inventory} recipes={recipes} onCraft={handleCraft} />
+      <CraftingMenu inventory={inventory} recipes={recipes} onCraft={handleCraft} />
 
       {isBuildingPanelOpen && (
-    <BuildingInteractionPanel
-      building={selectedBuilding}
-      onClose={closeBuildingPanel}
-      onAction={handleBuildingAction}
-    />
-  )}
-
-   {isAnimalPanelOpen && (
-    <AnimalInteractionPanel
-      animal={selectedAnimal}
-      onClose={closeAnimalPanel}
-      onAction={handleAnimalAction}
-    />
-  )}
+        <BuildingInteractionPanel
+          building={selectedBuilding}
+          onClose={closeBuildingPanel}
+          onAction={handleBuildingAction}
+        />
+      )}
+      {isAnimalPanelOpen && (
+        <AnimalInteractionPanel
+          animal={selectedAnimal}
+          onClose={closeAnimalPanel}
+          onAction={handleAnimalAction}
+        />
+      )}
     </div>
   );
 };

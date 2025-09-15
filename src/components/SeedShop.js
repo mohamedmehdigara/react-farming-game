@@ -1,31 +1,71 @@
-import React, { useState } from "react";
+import React from 'react';
+import styled from 'styled-components';
+import Button from './Button';
 
-const SeedShop = () => {
-  const [seeds, setSeeds] = useState(10);
+const ShopContainer = styled.div`
+  background-color: #f5f5dc; /* Beige */
+  border: 1px solid #d2b48c; /* Tan */
+  border-radius: 5px;
+  padding: 15px;
+  margin: 10px;
+  width: 300px;
+`;
 
-  // Added a `maxSeeds` prop to limit the number of seeds that can be purchased.
-  const maxSeeds = 100;
+const ShopTitle = styled.h3`
+  margin-top: 0;
+  margin-bottom: 10px;
+`;
 
-  // Updated the `buySeeds()` function to check if the number of seeds is already at the maximum. If it is, display an alert message.
-  const buySeeds = () => {
-    if (seeds === maxSeeds) {
-      alert("You have reached the maximum number of seeds.");
-      return;
-    }
+const SeedItem = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
 
-    setSeeds(seeds + 1);
-  };
+  &:last-child {
+    border-bottom: none;
+  }
+`;
 
-  // Added a conditional rendering statement to disable the "Buy Seed" button if the number of seeds is at the maximum.
-  const buySeedButtonDisabled = seeds === maxSeeds;
+const SeedName = styled.span`
+  font-weight: bold;
+`;
+
+const SeedPrice = styled.span`
+  color: green;
+`;
+
+const SeedShop = ({ onBuySeed, currentSeason }) => {
+  // Sample seed data for the shop
+  const shopSeeds = [
+    { id: 101, name: 'Carrot Seeds', price: 5, growTime: 3000, seasons: ['spring', 'summer'] },
+    { id: 102, name: 'Radish Seeds', price: 8, growTime: 2000, seasons: ['spring'] },
+    { id: 103, name: 'Beetroot Seeds', price: 12, growTime: 5000, seasons: ['fall'] },
+    { id: 104, name: 'Sunflower Seeds', price: 15, growTime: 7000, seasons: ['summer'] },
+  ];
 
   return (
-    <div>
-      <button onClick={buySeeds} disabled={buySeedButtonDisabled}>
-        Buy Seed
-      </button>
-      <p>You have {seeds} seeds.</p>
-    </div>
+    <ShopContainer>
+      <ShopTitle>Seed Shop</ShopTitle>
+      {shopSeeds.map((seed) => {
+        const isAvailable = seed.seasons.includes(currentSeason);
+        return (
+          <SeedItem key={seed.id}>
+            <SeedName>{seed.name}</SeedName>
+            <SeedPrice>Price: {seed.price} coins</SeedPrice>
+            <Button
+              onClick={() => onBuySeed(seed)}
+              variant="success"
+              size="small"
+              disabled={!isAvailable}
+            >
+              {isAvailable ? 'Buy' : 'Out of Season'}
+            </Button>
+          </SeedItem>
+        );
+      })}
+    </ShopContainer>
   );
 };
 
