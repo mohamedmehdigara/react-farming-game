@@ -4,7 +4,7 @@ import Farm from './components/Farm';
 import HarvestedDisplay from './components/HarvestedDisplay';
 import Leaderboard from './components/Leaderboard';
 import SeedShop from './components/SeedShop';
-import Shop from './components/Shop'; // Placeholder for future shop functionality
+import Shop from './components/Shop';
 import Player from './components/Player';
 import Button from './components/Button';
 import ResourceDisplay from './components/ResourceDisplay';
@@ -15,7 +15,7 @@ import InventoryDisplay from './components/InventoryDisplay';
 import BuildingInteractionPanel from './components/BuildingInteractionPanel';
 import AnimalInteractionPanel from './components/AnimalInteractionPanel';
 import TimeAndSeasons from './components/TimeAndSeasons';
-import SellMenu from './components/SellMenu'; // Import the new SellMenu component
+import SellMenu from './components/SellMenu';
 
 import './App.css';
 
@@ -70,9 +70,11 @@ const App = () => {
   const [isBuildingPanelOpen, setIsBuildingPanelOpen] = useState(false);
   const [selectedAnimal, setSelectedAnimal] = useState(null);
   const [isAnimalPanelOpen, setIsAnimalPanelOpen] = useState(false);
-  const [playerPos, setPlayerPos] = useState({ x: 0, y: 0 });
+  
+  // FIX: Initialize playerPos with a default object
+  const [playerPos, setPlayerPos] = useState({ x: 0, y: 0 }); 
+  
   const [playerName, setPlayerName] = useState('Farmer Joe');
-
   const [currentSeason, setCurrentSeason] = useState('spring');
   const [day, setDay] = useState(1);
 
@@ -265,7 +267,6 @@ const App = () => {
     closeAnimalPanel();
   };
 
-  // New function for crafting items
   const handleCraft = (recipeId) => {
     const selectedRecipe = recipes.find(recipe => recipe.id === recipeId);
     if (!selectedRecipe) {
@@ -273,13 +274,11 @@ const App = () => {
       return;
     }
     
-    // Check if player has enough ingredients
     const hasIngredients = selectedRecipe.ingredients.every(
       (ingredient) => inventory[ingredient.item] >= ingredient.quantity
     );
 
     if (hasIngredients) {
-      // Deduct ingredients from inventory
       setInventory(prevInventory => {
         const newInventory = { ...prevInventory };
         selectedRecipe.ingredients.forEach(ingredient => {
@@ -291,7 +290,6 @@ const App = () => {
         return newInventory;
       });
 
-      // Add crafted item to inventory
       setInventory(prevInventory => ({
         ...prevInventory,
         [selectedRecipe.result.item]: (prevInventory[selectedRecipe.result.item] || 0) + selectedRecipe.result.quantity,
@@ -303,6 +301,9 @@ const App = () => {
     }
   };
 
+  const handleMovePlayer = (newPos) => {
+    setPlayerPos(newPos);
+  };
 
   return (
     <div className="App">
@@ -318,13 +319,14 @@ const App = () => {
         plantedFields={plantedFields}
         onPlant={handlePlantButtonClick}
         onHarvest={handleHarvest}
-        inventory={inventory}
         seeds={seeds}
         buildings={buildings}
         animals={animals}
         season={currentSeason}
         onOpenBuildingPanel={openBuildingPanel}
         onOpenAnimalPanel={openAnimalPanel}
+        playerPos={playerPos}
+        onMovePlayer={handleMovePlayer}
       />
       <HarvestedDisplay harvestedPlants={harvestedPlants} />
 

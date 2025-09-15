@@ -1,57 +1,105 @@
-import React, { useState } from 'react';
-import styled from 'styled-components';
-import PlantIcon from './PlantIcon';
-import WaterIcon from './WaterIcon';
+import React from 'react';
+import styled, { css } from 'styled-components';
+import Plant from './Plant';
 
-const FieldContainer = styled.div`
-  width: ${({ size }) => `${size * 100}px`};
-  height: 100px;
-  border: 1px solid #ccc;
-  background-color: #fff;
-  cursor: pointer;
+// Helper function to determine the visual style of the tile
+const getTileStyles = (type, isInteractive) => {
+  switch (type) {
+    case 'dirt':
+      return css`
+        background-color: #8b4513; /* SaddleBrown */
+        &:hover {
+          background-color: ${isInteractive ? '#a0522d' : '#8b4513'};
+        }
+      `;
+    case 'grass':
+      return css`
+        background-color: #228b22; /* ForestGreen */
+        &:hover {
+          background-color: ${isInteractive ? '#2e8b57' : '#228b22'};
+        }
+      `;
+    case 'water':
+      return css`
+        background-color: #4682b4; /* SteelBlue */
+        cursor: not-allowed;
+      `;
+    default:
+      return css`
+        background-color: #d2b48c; /* Tan */
+      `;
+  }
+};
+
+const TileContainer = styled.div`
+  width: 100%;
+  height: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 5px;
-  transition: all 0.2s ease-in-out;
   position: relative;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
 
-  &.is-planted {
-    background-color: #00ff00;
-  }
+  ${props => getTileStyles(props.type, props.isInteractive)}
 
-  &.is-hovered {
-    background-color: #eee;
-    box-shadow: 0 0 3px #ccc;
-  }
-
-  &.is-focused {
-    outline: 2px solid #000;
-  }
+  ${props => props.isInteractive && css`
+    cursor: pointer;
+    &:active {
+      transform: scale(0.95);
+    }
+  `}
 `;
 
-const Field = ({ fieldIndex, isPlanted, onClick, onSelect, title, ariaLabel, waterLevel, size }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
+const WaterLevel = styled.div`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: #1e90ff; /* DodgerBlue */
+  transition: height 0.5s ease-in-out;
+  opacity: 0.8;
+`;
 
-  const handleSelect = () => {
-    onSelect && onSelect(fieldIndex); // Pass fieldIndex to onSelect handler
+const Field = ({ type, onClick, onSelect, fieldData, seeds }) => {
+  const isInteractive = type === 'dirt' || (fieldData && fieldData.isReady);
+
+  const handleInteraction = () => {
+    if (isInteractive) {
+      onClick();
+    }
   };
 
   return (
-    <FieldContainer
-      role="button"
-      tabIndex={0}
-      aria-label={ariaLabel || title}
-      className={`${isPlanted ? 'is-planted' : ''} ${isHovered ? 'is-hovered' : ''} ${isFocused ? 'is-focused' : ''}`}
-      onClick={onClick}
-      onSelect={handleSelect}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onFocus={() => setIsFocused(true)}
-      onBlur={() => setIsFocused(false)}
-      size={size}
+    <TileContainer
+      type={type}
+      onClick={handleInteraction}
+      isInteractive={isInteractive}
+      onMouseEnter={() => onSelect && onSelect(fieldData)}
+      onMouseLeave={() => onSelect && onSelect(null)}
     >
-      {isPlanted && <PlantIcon />}
-      {waterLevel < 100 && <WaterIcon />}
-    </FieldContainer>
+      {type === 'dirt' && !fieldData && (
+        <span style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.9em' }}>
+          + Plant
+        </span>
+      )}
+
+      {fieldData && (
+        <>
+          <Plant
+            seedId={fieldData.seedId}
+            plantedAt={fieldData.plantedAt}
+            growTime={seeds.find(seed => seed.id === fieldData.seedId)?.growTime}
+            seeds={seeds}
+          />
+          {fieldData.waterLevel < 100 && (
+            <WaterLevel style={{ height: `${fieldData.waterLevel}%` }} />
+          )}
+        </>
+      )}
+    </TileContainer>
   );
 };
 
