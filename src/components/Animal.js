@@ -1,46 +1,101 @@
 import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
+import styled, { keyframes, css } from 'styled-components';
+
+// Keyframe animation for subtle movement
+const float = keyframes`
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-3px); }
+  100% { transform: translateY(0px); }
+`;
+
+// Keyframe animation for random wandering
+const wander = keyframes`
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(5px, -5px); }
+  50% { transform: translate(0, 5px); }
+  75% { transform: translate(-5px, -5px); }
+  100% { transform: translate(0, 0); }
+`;
 
 const AnimalContainer = styled.div`
-  position: absolute; /* Position on the farm grid */
+  position: absolute;
   width: ${props => props.size || '60px'};
   height: ${props => props.size || '60px'};
-  background-color: ${props => props.color || '#f0f0f0'}; /* Default light gray */
-  border-radius: 50%; /* Make it circular by default */
+  background-color: ${props => props.color || '#f0f0f0'};
+  border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
   font-size: 0.8em;
   cursor: pointer;
-  border: 1px solid #ccc;
+  border: 2px solid #ccc;
+  z-index: 10;
+  transition: border-color 0.3s ease-in-out;
+
+  ${props => props.needsCare && css`
+    border-color: red;
+    animation: ${float} 1s ease-in-out infinite;
+  `}
+
+  ${props => props.hasProduct && css`
+    border-color: gold;
+    animation: ${float} 1s ease-in-out infinite;
+  `}
 `;
 
 const AnimalIcon = styled.span`
-  /* You could use text emojis or more complex SVG here */
   font-size: 1.5em;
 `;
 
+const StatusIndicator = styled.span`
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  font-size: 0.7em;
+  font-weight: bold;
+  background-color: ${props => props.color || 'red'};
+  color: white;
+  border-radius: 50%;
+  padding: 3px;
+  line-height: 1;
+`;
+
 const Animal = ({ type, x, y, size, color, onInteract }) => {
-  const [mood, setMood] = useState('idle'); // Example: idle, hungry, happy
-  const [lastFed, setLastFed] = useState(Date.now());
   const [needsCare, setNeedsCare] = useState(false);
+  const [hasProduct, setHasProduct] = useState(false);
+
+  // Example: a chicken produces an egg every 30 seconds
+  const productionInterval = 30000;
 
   useEffect(() => {
-    const careInterval = Math.random() * 15000 + 15000; // Needs care every 15-30 seconds (for testing)
+    // Timer to determine when the animal needs care
+    const careInterval = Math.random() * 20000 + 10000;
     const careTimer = setTimeout(() => {
       setNeedsCare(true);
-      setMood('unhappy');
     }, careInterval);
 
-    return () => clearTimeout(careTimer);
-  }, []);
+    // Timer for product generation
+    const productTimer = setInterval(() => {
+      if (!needsCare) {
+        setHasProduct(true);
+      }
+    }, productionInterval);
+
+    return () => {
+      clearTimeout(careTimer);
+      clearInterval(productTimer);
+    };
+  }, [needsCare, productionInterval]);
 
   const handleInteract = () => {
     if (onInteract) {
-      onInteract({ type, x, y });
-      setNeedsCare(false);
-      setMood('happy');
-      setLastFed(Date.now());
+      if (needsCare) {
+        onInteract({ type, x, y, action: 'feed' });
+        setNeedsCare(false);
+      } else if (hasProduct) {
+        onInteract({ type, x, y, action: 'collect' });
+        setHasProduct(false);
+      }
     }
   };
 
@@ -57,15 +112,25 @@ const Animal = ({ type, x, y, size, color, onInteract }) => {
     }
   };
 
+  // Adjust style to position the animal on the farm grid
   const style = {
-    top: `${y * 100 + (100 - (size || 60)) / 2}px`, // Adjust for tile size and animal size
-    left: `${x * 100 + (100 - (size || 60)) / 2}px`, // Adjust for tile size and animal size
+    top: `${y * 100 + (100 - (size || 60)) / 2}px`,
+    left: `${x * 100 + (100 - (size || 60)) / 2}px`,
   };
 
   return (
-    <AnimalContainer style={style} size={size} color={color} onClick={handleInteract} title={`${type} (${mood})`}>
+    <AnimalContainer 
+      style={style} 
+      size={size} 
+      color={color} 
+      onClick={handleInteract} 
+      needsCare={needsCare} 
+      hasProduct={hasProduct}
+      title={`${type}`}
+    >
       <AnimalIcon>{getAnimalIcon(type)}</AnimalIcon>
-      {needsCare && <span style={{ position: 'absolute', top: '-10px', right: '-10px', fontSize: '0.7em', backgroundColor: 'red', color: 'white', borderRadius: '50%', padding: '3px' }}>!</span>}
+      {needsCare && <StatusIndicator color="red">!</StatusIndicator>}
+      {hasProduct && <StatusIndicator color="gold">🥚</StatusIndicator>}
     </AnimalContainer>
   );
 };
