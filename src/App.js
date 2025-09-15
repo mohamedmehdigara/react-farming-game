@@ -4,7 +4,7 @@ import Farm from './components/Farm';
 import HarvestedDisplay from './components/HarvestedDisplay';
 import Leaderboard from './components/Leaderboard';
 import SeedShop from './components/SeedShop';
-import Shop from './components/Shop';
+import Shop from './components/Shop'; // Placeholder for future shop functionality
 import Player from './components/Player';
 import Button from './components/Button';
 import ResourceDisplay from './components/ResourceDisplay';
@@ -14,7 +14,8 @@ import CraftingMenu from './components/CraftingMenu';
 import InventoryDisplay from './components/InventoryDisplay';
 import BuildingInteractionPanel from './components/BuildingInteractionPanel';
 import AnimalInteractionPanel from './components/AnimalInteractionPanel';
-import TimeAndSeasons from './components/TimeAndSeasons'; // Import the new component
+import TimeAndSeasons from './components/TimeAndSeasons';
+import SellMenu from './components/SellMenu'; // Import the new SellMenu component
 
 import './App.css';
 
@@ -72,13 +73,11 @@ const App = () => {
   const [playerPos, setPlayerPos] = useState({ x: 0, y: 0 });
   const [playerName, setPlayerName] = useState('Farmer Joe');
 
-  // New state for seasonal effects
   const [currentSeason, setCurrentSeason] = useState('spring');
   const [day, setDay] = useState(1);
 
-  // New useEffect to handle seasonal changes
   useEffect(() => {
-    const seasonLength = 10; // Days per season for example
+    const seasonLength = 10;
     const dayInterval = setInterval(() => {
       setDay(prevDay => {
         const newDay = prevDay + 1;
@@ -88,13 +87,11 @@ const App = () => {
           const nextSeason = seasons[(currentSeasonIndex + 1) % seasons.length];
           setCurrentSeason(nextSeason);
 
-          // Handle crops dying at the end of a season
           if (nextSeason === 'spring') {
             setPlantedFields(prevFields =>
               prevFields.map(field => {
                 const seedData = seeds.find(s => s.id === field?.seedId);
                 if (seedData && !seedData.seasons.includes(currentSeason)) {
-                  // Crop dies
                   return null;
                 }
                 return field;
@@ -105,7 +102,7 @@ const App = () => {
         }
         return newDay;
       });
-    }, 5000); // A "day" lasts for 5 seconds
+    }, 5000);
 
     return () => clearInterval(dayInterval);
   }, [currentSeason, seeds]);
@@ -119,10 +116,8 @@ const App = () => {
     setSelectedSeed(seed);
   };
 
-  // Updated handlePlantConfirm to check for seasons
   const handlePlantConfirm = () => {
     if (isPlanting && selectedSeed !== null && selectedFieldIndex !== null && !plantedFields[selectedFieldIndex]) {
-      // Check if the seed can be planted in the current season
       if (selectedSeed.seasons && !selectedSeed.seasons.includes(currentSeason)) {
         alert(`${selectedSeed.name} seeds can't be planted in the ${currentSeason}.`);
         return;
@@ -183,6 +178,23 @@ const App = () => {
     setSeeds(prevSeeds => [...prevSeeds, seedToBuy]);
   };
 
+  const handleSell = (itemName, price) => {
+    setInventory(prevInventory => {
+      const newInventory = { ...prevInventory };
+      if (newInventory[itemName] > 1) {
+        newInventory[itemName] -= 1;
+      } else {
+        delete newInventory[itemName];
+      }
+      return newInventory;
+    });
+
+    setResources(prevResources => ({
+      ...prevResources,
+      money: prevResources.money + price
+    }));
+  };
+
   const handleQuestComplete = (questId) => {
     setQuests(prevQuests =>
       prevQuests.map(quest =>
@@ -190,41 +202,6 @@ const App = () => {
       )
     );
     alert(`Quest "${quests.find(q => q.id === questId)?.title}" completed!`);
-  };
-
-  const handleBuildingClick = (building) => {
-    alert(`Clicked on ${building.type} at (${building.x}, ${building.y})`);
-  };
-
-  const handleAnimalInteract = (animalData) => {
-    alert(`Interacted with ${animalData.type} at (${animalData.x}, ${animalData.y})`);
-  };
-
-  const handleCraft = (recipeId) => {
-    const selectedRecipe = recipes.find(recipe => recipe.id === recipeId);
-    if (selectedRecipe) {
-      const canCraft = selectedRecipe.ingredients.every(
-        (ingredient) => inventory[ingredient.item] >= ingredient.quantity
-      );
-  
-      if (canCraft) {
-        const newInventory = { ...inventory };
-        selectedRecipe.ingredients.forEach((ingredient) => {
-          newInventory[ingredient.item] -= ingredient.quantity;
-          if (newInventory[ingredient.item] === 0) {
-            delete newInventory[ingredient.item];
-          }
-        });
-        setInventory(newInventory);
-        setInventory(prevInventory => ({
-          ...prevInventory,
-          [selectedRecipe.result.item]: (prevInventory[selectedRecipe.result.item] || 0) + selectedRecipe.result.quantity,
-        }));
-        alert(`Crafted ${selectedRecipe.result.quantity} ${selectedRecipe.result.item}!`);
-      } else {
-        alert(`Not enough resources to craft ${selectedRecipe.name}.`);
-      }
-    }
   };
 
   const openQuestDetail = (questId) => {
@@ -288,13 +265,53 @@ const App = () => {
     closeAnimalPanel();
   };
 
+  // New function for crafting items
+  const handleCraft = (recipeId) => {
+    const selectedRecipe = recipes.find(recipe => recipe.id === recipeId);
+    if (!selectedRecipe) {
+      alert("Recipe not found!");
+      return;
+    }
+    
+    // Check if player has enough ingredients
+    const hasIngredients = selectedRecipe.ingredients.every(
+      (ingredient) => inventory[ingredient.item] >= ingredient.quantity
+    );
+
+    if (hasIngredients) {
+      // Deduct ingredients from inventory
+      setInventory(prevInventory => {
+        const newInventory = { ...prevInventory };
+        selectedRecipe.ingredients.forEach(ingredient => {
+          newInventory[ingredient.item] -= ingredient.quantity;
+          if (newInventory[ingredient.item] <= 0) {
+            delete newInventory[ingredient.item];
+          }
+        });
+        return newInventory;
+      });
+
+      // Add crafted item to inventory
+      setInventory(prevInventory => ({
+        ...prevInventory,
+        [selectedRecipe.result.item]: (prevInventory[selectedRecipe.result.item] || 0) + selectedRecipe.result.quantity,
+      }));
+      
+      alert(`Crafted ${selectedRecipe.name}!`);
+    } else {
+      alert(`Not enough resources to craft ${selectedRecipe.name}.`);
+    }
+  };
+
+
   return (
     <div className="App">
       <h1>Farm Game</h1>
       <Player inventory={inventory} />
       <TimeAndSeasons day={day} season={currentSeason} />
+      <ResourceDisplay resources={resources} />
       <SeedShop onBuySeed={handleBuySeed} currentSeason={currentSeason} />
-      <Shop />
+      <SellMenu inventory={inventory} onSell={handleSell} />
       <InventoryDisplay inventory={inventory} />
       <Leaderboard />
       <Farm
@@ -306,6 +323,8 @@ const App = () => {
         buildings={buildings}
         animals={animals}
         season={currentSeason}
+        onOpenBuildingPanel={openBuildingPanel}
+        onOpenAnimalPanel={openAnimalPanel}
       />
       <HarvestedDisplay harvestedPlants={harvestedPlants} />
 
@@ -331,19 +350,7 @@ const App = () => {
         <Button onClick={() => { /* Implement delete plant logic */ }} variant="danger">
           Delete Plant
         </Button>
-        <ResourceDisplay resources={resources} />
         <QuestLog quests={quests} onQuestComplete={handleQuestComplete} onOpenQuestDetail={openQuestDetail} />
-        {buildings.map(building => (
-          <Building
-            key={building.type + building.x + building.y}
-            type={building.type}
-            x={building.x}
-            y={building.y}
-            width={building.width}
-            height={building.height}
-            onClick={() => openBuildingPanel(building)}
-          />
-        ))}
       </div>
       <CraftingMenu inventory={inventory} recipes={recipes} onCraft={handleCraft} />
 
