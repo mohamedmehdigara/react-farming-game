@@ -1,377 +1,213 @@
 import React, { useState, useEffect } from 'react';
-import SeedList from './components/SeedList';
-import Farm from './components/Farm';
-import HarvestedDisplay from './components/HarvestedDisplay';
-import Leaderboard from './components/Leaderboard';
-import SeedShop from './components/SeedShop';
-import Shop from './components/Shop';
-import Player from './components/Player';
-import Button from './components/Button';
-import ResourceDisplay from './components/ResourceDisplay';
-import QuestLog from './components/QuestLog';
-import Building from './components/Building';
-import CraftingMenu from './components/CraftingMenu';
-import InventoryDisplay from './components/InventoryDisplay';
-import BuildingInteractionPanel from './components/BuildingInteractionPanel';
-import AnimalInteractionPanel from './components/AnimalInteractionPanel';
-import TimeAndSeasons from './components/TimeAndSeasons';
-import SellMenu from './components/SellMenu';
+import styled, { keyframes, css } from 'styled-components';
 
-import './App.css';
+// --- Constants ---
+const CROPS = {
+  WHEAT: { id: 'WHEAT', name: 'Wheat', cost: 10, revenue: 25, growthTime: 5, xp: 15, minLevel: 1 },
+  CORN: { id: 'CORN', name: 'Corn', cost: 40, revenue: 100, growthTime: 12, xp: 45, minLevel: 3 },
+  CARROT: { id: 'CARROT', name: 'Carrot', cost: 100, revenue: 300, growthTime: 25, xp: 120, minLevel: 5 },
+};
 
-const App = () => {
-  const [seeds, setSeeds] = useState([
-    { id: 1, name: 'Tomato', growTime: 5000, seasons: ['summer'] },
-    { id: 2, name: 'Corn', growTime: 8000, seasons: ['summer', 'fall'] },
-    { id: 3, name: 'Pumpkin', growTime: 10000, seasons: ['fall'] },
-    { id: 4, name: 'Potato', growTime: 6000, seasons: ['spring', 'summer'] },
-  ]);
-  const [plantedFields, setPlantedFields] = useState(Array(9).fill(null));
-  const [inventory, setInventory] = useState({});
-  const [selectedSeed, setSelectedSeed] = useState(null);
-  const [isPlanting, setIsPlanting] = useState(false);
-  const [selectedFieldIndex, setSelectedFieldIndex] = useState(null);
-  const [harvestedPlants, setHarvestedPlants] = useState([]);
-  const [resources, setResources] = useState({
-    money: 100,
-    wood: 20,
-  });
-  const [quests, setQuests] = useState([
-    { id: 1, title: 'First Harvest', description: 'Harvest 5 Tomatoes.', reward: '10 Coins', status: 'in progress', goal: { type: 'harvest', itemId: 1, quantity: 5, current: 0 } },
-    { id: 2, title: 'Plant Corn', description: 'Plant 3 Corn seeds.', status: 'in progress', goal: { type: 'plant', itemId: 2, quantity: 3, current: 0 } },
-    { id: 3, title: 'Water Crops', description: 'Water your plants 3 times.', reward: '5 Coins', status: 'completed', goal: { type: 'water', quantity: 3, current: 3 } },
-    { id: 4, title: 'Expand Farm', description: 'Expand your farm by one tile.', status: 'in progress', goal: { type: 'expandFarm', quantity: 1, current: 0 } },
-  ]);
-  const [buildings, setBuildings] = useState([
-    { type: 'Barn', x: 1, y: 1, width: 150, height: 100 },
-    { type: 'Coop', x: 4, y: 3 },
-  ]);
-  const [animals, setAnimals] = useState([
-    { type: 'chicken', x: 2, y: 5 },
-    { type: 'cow', x: 6, y: 2, size: '80px', color: '#d3d3d3' },
-  ]);
-  const [recipes] = useState([
-    {
-      id: 301,
-      name: 'Wooden Fence',
-      ingredients: [{ item: 'wood', quantity: 3 }],
-      result: { item: 'wooden_fence', quantity: 1 },
-    },
-    {
-      id: 302,
-      name: 'Basic Fertilizer',
-      ingredients: [{ item: 'plant_fiber', quantity: 2 }],
-      result: { item: 'basic_fertilizer', quantity: 1 },
-    },
-  ]);
-  const [selectedQuest, setSelectedQuest] = useState(null);
-  const [isQuestDetailOpen, setIsQuestDetailOpen] = useState(false);
-  const [selectedBuilding, setSelectedBuilding] = useState(null);
-  const [isBuildingPanelOpen, setIsBuildingPanelOpen] = useState(false);
-  const [selectedAnimal, setSelectedAnimal] = useState(null);
-  const [isAnimalPanelOpen, setIsAnimalPanelOpen] = useState(false);
-  
-  // FIX: Initialize playerPos with a default object
-  const [playerPos, setPlayerPos] = useState({ x: 0, y: 0 }); 
-  
-  const [playerName, setPlayerName] = useState('Farmer Joe');
-  const [currentSeason, setCurrentSeason] = useState('spring');
-  const [day, setDay] = useState(1);
+const WEATHER_TYPES = {
+  SUNNY: { label: 'Sunny', icon: '☀️', multiplier: 1, color: '#FFF9C4' },
+  RAIN: { label: 'Raining', icon: '🌧️', multiplier: 2, color: '#B3E5FC' },
+  HEATWAVE: { label: 'Heatwave', icon: '🔥', multiplier: 0.5, color: '#FFCCBC' },
+};
 
+const GROWTH_STAGES = { SEED: 0, SPROUT: 1, MATURE: 2 };
+const XP_PER_LEVEL = 200;
+const AUTO_HARVESTER_COST = 500;
+
+// --- Styled Components ---
+const GameContainer = styled.div`
+  display: flex; flex-direction: column; align-items: center;
+  font-family: 'Segoe UI', sans-serif; 
+  background-color: ${props => props.bgColor};
+  transition: background-color 2s ease;
+  min-height: 100vh; padding: 20px;
+`;
+
+const Header = styled.div`
+  background: #5d4037; color: white; padding: 15px 30px; width: 100%; max-width: 400px;
+  border-radius: 15px; margin-bottom: 15px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+`;
+
+const WeatherIndicator = styled.div`
+  background: rgba(255, 255, 255, 0.9);
+  padding: 8px 20px; border-radius: 20px; margin-bottom: 15px;
+  font-weight: bold; display: flex; align-items: center; gap: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  border: 2px solid #5d4037;
+`;
+
+const StatsGrid = styled.div` display: flex; justify-content: space-around; margin-top: 5px; `;
+
+const XPBarContainer = styled.div`
+  width: 100%; height: 8px; background: #3e2723; border-radius: 4px; margin-top: 10px; overflow: hidden;
+`;
+
+const XPFill = styled.div`
+  height: 100%; background: #00e5ff; width: ${props => props.progress}%; transition: width 0.4s ease;
+`;
+
+const FarmGrid = styled.div`
+  display: grid; grid-template-columns: repeat(3, 100px); grid-gap: 12px; margin-bottom: 20px;
+`;
+
+const PlotPulse = keyframes` 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } `;
+
+const Plot = styled.div`
+  width: 100px; height: 100px; 
+  background-color: ${props => props.locked ? '#bdbdbd' : props.isReady ? '#aed581' : '#8d6e63'};
+  border: 4px solid #5d4037; border-radius: 12px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; cursor: pointer;
+  animation: ${props => props.isReady ? PlotPulse : 'none'} 1.5s infinite;
+  opacity: ${props => props.locked ? 0.5 : 1};
+`;
+
+const ProgressBar = styled.div` width: 70%; height: 6px; background: #4e342e; border-radius: 3px; margin-top: 8px; `;
+const ProgressFill = styled.div` height: 100%; background: #8bc34a; width: ${props => props.progress}%; `;
+
+const Controls = styled.div` display: flex; flex-direction: column; gap: 12px; align-items: center; `;
+const ButtonGroup = styled.div` display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; `;
+
+const Button = styled.button`
+  padding: 10px 15px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer;
+  background-color: ${props => props.variant === 'upgrade' ? '#ab47bc' : props.active ? '#388e3c' : '#81c784'};
+  box-shadow: 0 4px ${props => props.variant === 'upgrade' ? '#7b1fa2' : props.active ? '#1b5e20' : '#2e7d32'};
+  &:disabled { background-color: #bdbdbd; box-shadow: 0 4px #9e9e9e; cursor: not-allowed; }
+`;
+
+// --- Main App Component ---
+export default function App() {
+  const [money, setMoney] = useState(() => JSON.parse(localStorage.getItem('zf-v3-money')) ?? 50);
+  const [xp, setXp] = useState(() => JSON.parse(localStorage.getItem('zf-v3-xp')) ?? 0);
+  const [plots, setPlots] = useState(() => JSON.parse(localStorage.getItem('zf-v3-plots')) ?? Array(9).fill(null));
+  const [hasAuto, setHasAuto] = useState(() => JSON.parse(localStorage.getItem('zf-v3-auto')) ?? false);
+  const [weather, setWeather] = useState('SUNNY');
+  const [weatherTicks, setWeatherTicks] = useState(15); // Seconds until weather changes
+  const [selectedSeed, setSelectedSeed] = useState(CROPS.WHEAT);
+
+  const level = Math.floor(xp / XP_PER_LEVEL) + 1;
+  const unlockedPlotsCount = level >= 5 ? 9 : level >= 3 ? 6 : 3;
+
+  // Sync LocalStorage
   useEffect(() => {
-    const seasonLength = 10;
-    const dayInterval = setInterval(() => {
-      setDay(prevDay => {
-        const newDay = prevDay + 1;
-        if (newDay > seasonLength) {
-          const seasons = ['spring', 'summer', 'fall', 'winter'];
-          const currentSeasonIndex = seasons.indexOf(currentSeason);
-          const nextSeason = seasons[(currentSeasonIndex + 1) % seasons.length];
-          setCurrentSeason(nextSeason);
+    localStorage.setItem('zf-v3-money', JSON.stringify(money));
+    localStorage.setItem('zf-v3-xp', JSON.stringify(xp));
+    localStorage.setItem('zf-v3-plots', JSON.stringify(plots));
+    localStorage.setItem('zf-v3-auto', JSON.stringify(hasAuto));
+  }, [money, xp, plots, hasAuto]);
 
-          if (nextSeason === 'spring') {
-            setPlantedFields(prevFields =>
-              prevFields.map(field => {
-                const seedData = seeds.find(s => s.id === field?.seedId);
-                if (seedData && !seedData.seasons.includes(currentSeason)) {
-                  return null;
-                }
-                return field;
-              })
-            );
-          }
-          return 1;
+  // Main Engine
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // 1. Update Weather Timer
+      setWeatherTicks(prev => {
+        if (prev <= 1) {
+          const types = Object.keys(WEATHER_TYPES);
+          const nextWeather = types[Math.floor(Math.random() * types.length)];
+          setWeather(nextWeather);
+          return 15 + Math.floor(Math.random() * 15);
         }
-        return newDay;
-      });
-    }, 5000);
-
-    return () => clearInterval(dayInterval);
-  }, [currentSeason, seeds]);
-
-  const handlePlantButtonClick = (fieldIndex) => {
-    setIsPlanting(true);
-    setSelectedFieldIndex(fieldIndex);
-  };
-
-  const handleSeedSelect = (seed) => {
-    setSelectedSeed(seed);
-  };
-
-  const handlePlantConfirm = () => {
-    if (isPlanting && selectedSeed !== null && selectedFieldIndex !== null && !plantedFields[selectedFieldIndex]) {
-      if (selectedSeed.seasons && !selectedSeed.seasons.includes(currentSeason)) {
-        alert(`${selectedSeed.name} seeds can't be planted in the ${currentSeason}.`);
-        return;
-      }
-      
-      const newPlantedFields = [...plantedFields];
-      newPlantedFields[selectedFieldIndex] = {
-        seedId: selectedSeed.id,
-        plantedAt: Date.now(),
-        growTime: selectedSeed.growTime,
-      };
-      setPlantedFields(newPlantedFields);
-      setSeeds(prevSeeds => prevSeeds.filter(s => s.id !== selectedSeed.id));
-      setIsPlanting(false);
-      setSelectedSeed(null);
-      setSelectedFieldIndex(null);
-
-      setQuests(prevQuests =>
-        prevQuests.map(quest =>
-          quest.goal?.type === 'plant' && quest.goal?.itemId === selectedSeed.id && quest.status !== 'completed'
-            ? { ...quest, goal: { ...quest.goal, current: quest.goal.current + 1 } }
-            : quest
-        )
-      );
-    } else if (plantedFields[selectedFieldIndex]) {
-      alert("This field is already planted.");
-    } else if (!selectedSeed) {
-      alert("Please select a seed to plant.");
-    }
-  };
-
-  const handleCancelPlanting = () => {
-    setIsPlanting(false);
-    setSelectedSeed(null);
-    setSelectedFieldIndex(null);
-  };
-
-  const handleHarvest = (fieldIndex) => {
-    const fieldData = plantedFields[fieldIndex];
-    if (fieldData && Date.now() - fieldData.plantedAt > fieldData.growTime) {
-      const harvestedSeed = seeds.find(s => s.id === fieldData.seedId);
-      if (harvestedSeed) {
-        setInventory(prevInventory => ({
-          ...prevInventory,
-          [harvestedSeed.name]: (prevInventory[harvestedSeed.name] || 0) + 1,
-        }));
-        setHarvestedPlants(prevHarvested => [...prevHarvested, harvestedSeed]);
-        const newPlantedFields = [...plantedFields];
-        newPlantedFields[fieldIndex] = null;
-        setPlantedFields(newPlantedFields);
-      }
-    } else if (fieldData) {
-      alert("This plant is not ready to harvest yet.");
-    }
-  };
-
-  const handleBuySeed = (seedToBuy) => {
-    setSeeds(prevSeeds => [...prevSeeds, seedToBuy]);
-  };
-
-  const handleSell = (itemName, price) => {
-    setInventory(prevInventory => {
-      const newInventory = { ...prevInventory };
-      if (newInventory[itemName] > 1) {
-        newInventory[itemName] -= 1;
-      } else {
-        delete newInventory[itemName];
-      }
-      return newInventory;
-    });
-
-    setResources(prevResources => ({
-      ...prevResources,
-      money: prevResources.money + price
-    }));
-  };
-
-  const handleQuestComplete = (questId) => {
-    setQuests(prevQuests =>
-      prevQuests.map(quest =>
-        quest.id === questId ? { ...quest, status: 'completed' } : quest
-      )
-    );
-    alert(`Quest "${quests.find(q => q.id === questId)?.title}" completed!`);
-  };
-
-  const openQuestDetail = (questId) => {
-    const questToView = quests.find(q => q.id === questId);
-    setSelectedQuest(questToView);
-    setIsQuestDetailOpen(true);
-  };
-
-  const closeQuestDetail = () => {
-    setSelectedQuest(null);
-    setIsQuestDetailOpen(false);
-  };
-
-  const openBuildingPanel = (building) => {
-    setSelectedBuilding(building);
-    setIsBuildingPanelOpen(true);
-  };
-
-  const closeBuildingPanel = () => {
-    setSelectedBuilding(null);
-    setIsBuildingPanelOpen(false);
-  };
-
-  const handleBuildingAction = (building, action) => {
-    console.log(`Action "${action}" on ${building.type} at (${building.x}, ${building.y})`);
-    if (action === 'collect' && building.type === 'Coop') {
-      setInventory(prevInventory => ({ ...prevInventory, 'Egg': (prevInventory['Egg'] || 0) + 3 }));
-    } else if (action === 'enter' && building.type === 'Barn') {
-      alert('Entered the barn!');
-    } else if (action === 'storage' && building.type === 'Barn') {
-      alert('Opened barn storage!');
-    } else if (action === 'feed' && building.type === 'Coop') {
-      setResources(prevResources => ({ ...prevResources, money: prevResources.money - 5 }));
-      alert('Chickens fed!');
-    }
-    closeBuildingPanel();
-  };
-
-  const openAnimalPanel = (animal) => {
-    setSelectedAnimal(animal);
-    setIsAnimalPanelOpen(true);
-  };
-
-  const closeAnimalPanel = () => {
-    setSelectedAnimal(null);
-    setIsAnimalPanelOpen(false);
-  };
-
-  const handleAnimalAction = (animal, action) => {
-    console.log(`Action "${action}" on ${animal.type} at (${animal.x}, ${animal.y})`);
-    if (action === 'feed' && animal.type === 'chicken') {
-      setResources(prevResources => ({ ...prevResources, money: prevResources.money - 2 }));
-      alert('Chicken fed!');
-    } else if (action === 'collect' && animal.type === 'chicken') {
-      setInventory(prevInventory => ({ ...prevInventory, 'Egg': (prevInventory['Egg'] || 0) + 1 }));
-      alert('Collected an egg!');
-    } else if (action === 'milk' && animal.type === 'cow') {
-      setInventory(prevInventory => ({ ...prevInventory, 'Milk': (prevInventory['Milk'] || 0) + 1 }));
-      alert('Milked the cow!');
-    }
-    closeAnimalPanel();
-  };
-
-  const handleCraft = (recipeId) => {
-    const selectedRecipe = recipes.find(recipe => recipe.id === recipeId);
-    if (!selectedRecipe) {
-      alert("Recipe not found!");
-      return;
-    }
-    
-    const hasIngredients = selectedRecipe.ingredients.every(
-      (ingredient) => inventory[ingredient.item] >= ingredient.quantity
-    );
-
-    if (hasIngredients) {
-      setInventory(prevInventory => {
-        const newInventory = { ...prevInventory };
-        selectedRecipe.ingredients.forEach(ingredient => {
-          newInventory[ingredient.item] -= ingredient.quantity;
-          if (newInventory[ingredient.item] <= 0) {
-            delete newInventory[ingredient.item];
-          }
-        });
-        return newInventory;
+        return prev - 1;
       });
 
-      setInventory(prevInventory => ({
-        ...prevInventory,
-        [selectedRecipe.result.item]: (prevInventory[selectedRecipe.result.item] || 0) + selectedRecipe.result.quantity,
+      // 2. Update Growth & Auto-Harvest
+      let earnedMoney = 0;
+      let earnedXp = 0;
+
+      setPlots(currentPlots => currentPlots.map(plot => {
+        if (!plot) return null;
+        
+        // Auto-harvest logic
+        if (plot.stage === GROWTH_STAGES.MATURE && hasAuto) {
+          earnedMoney += plot.type.revenue;
+          earnedXp += plot.type.xp;
+          return null;
+        }
+
+        if (plot.stage === GROWTH_STAGES.MATURE) return plot;
+
+        // Growth logic: Add progress based on weather multiplier
+        const growthStep = (100 / plot.type.growthTime) * WEATHER_TYPES[weather].multiplier;
+        const newProgress = Math.min(plot.progress + growthStep, 100);
+        
+        let newStage = plot.stage;
+        if (newProgress >= 100) newStage = GROWTH_STAGES.MATURE;
+        else if (newProgress >= 50) newStage = GROWTH_STAGES.SPROUT;
+
+        return { ...plot, progress: newProgress, stage: newStage };
       }));
-      
-      alert(`Crafted ${selectedRecipe.name}!`);
-    } else {
-      alert(`Not enough resources to craft ${selectedRecipe.name}.`);
-    }
-  };
 
-  const handleMovePlayer = (newPos) => {
-    setPlayerPos(newPos);
+      if (earnedMoney > 0) setMoney(m => m + earnedMoney);
+      if (earnedXp > 0) setXp(x => x + earnedXp);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [weather, hasAuto]);
+
+  const handlePlotClick = (index) => {
+    if (index >= unlockedPlotsCount) return;
+    const plot = plots[index];
+
+    if (plot?.stage === GROWTH_STAGES.MATURE) {
+      setMoney(m => m + plot.type.revenue);
+      setXp(x => x + plot.type.xp);
+      setPlots(ps => ps.map((p, i) => i === index ? null : p));
+    } else if (!plot && money >= selectedSeed.cost && level >= selectedSeed.minLevel) {
+      setMoney(m => m - selectedSeed.cost);
+      setPlots(ps => ps.map((p, i) => i === index ? { type: selectedSeed, stage: 0, progress: 0 } : p));
+    }
   };
 
   return (
-    <div className="App">
-      <h1>Farm Game</h1>
-      <Player inventory={inventory} />
-      <TimeAndSeasons day={day} season={currentSeason} />
-      <ResourceDisplay resources={resources} />
-      <SeedShop onBuySeed={handleBuySeed} currentSeason={currentSeason} />
-      <SellMenu inventory={inventory} onSell={handleSell} />
-      <InventoryDisplay inventory={inventory} />
-      <Leaderboard />
-      <Farm
-        plantedFields={plantedFields}
-        onPlant={handlePlantButtonClick}
-        onHarvest={handleHarvest}
-        seeds={seeds}
-        buildings={buildings}
-        animals={animals}
-        season={currentSeason}
-        onOpenBuildingPanel={openBuildingPanel}
-        onOpenAnimalPanel={openAnimalPanel}
-        playerPos={playerPos}
-        onMovePlayer={handleMovePlayer}
-      />
-      <HarvestedDisplay harvestedPlants={harvestedPlants} />
+    <GameContainer bgColor={WEATHER_TYPES[weather].color}>
+      <Header>
+        <h2 style={{ margin: 0 }}>Level {level} Farmer</h2>
+        <StatsGrid>
+          <span>💰 {money}</span> <span>✨ {xp} XP</span>
+        </StatsGrid>
+        <XPBarContainer><XPFill progress={(xp % XP_PER_LEVEL) / 2} /></XPBarContainer>
+      </Header>
 
-      {isPlanting && (
-        <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)' }}>
-          <h2>Select a Seed to Plant</h2>
-          <SeedList seeds={seeds} onSelect={handleSeedSelect} />
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-            <Button onClick={handlePlantConfirm} variant="primary" disabled={selectedSeed === null}>
-              Plant Seed
+      <WeatherIndicator>
+        <span>{WEATHER_TYPES[weather].icon} {WEATHER_TYPES[weather].label}</span>
+        <span style={{ fontSize: '12px', opacity: 0.6 }}>Changes in {weatherTicks}s</span>
+      </WeatherIndicator>
+
+      <FarmGrid>
+        {plots.map((plot, i) => (
+          <Plot key={i} locked={i >= unlockedPlotsCount} isReady={plot?.stage === 2} onClick={() => handlePlotClick(i)}>
+            {i >= unlockedPlotsCount ? '🔒' : plot ? (
+              <>
+                <span style={{ fontSize: '32px' }}>
+                  {plot.stage === 2 ? (plot.type.id === 'WHEAT' ? '🌾' : plot.type.id === 'CORN' ? '🌽' : '🥕') : (plot.stage === 1 ? '🌿' : '🌱')}
+                </span>
+                <ProgressBar><ProgressFill progress={plot.progress} /></ProgressBar>
+              </>
+            ) : <span style={{ opacity: 0.2 }}>+</span>}
+          </Plot>
+        ))}
+      </FarmGrid>
+
+      <Controls>
+        <ButtonGroup>
+          {Object.values(CROPS).map(crop => (
+            <Button key={crop.id} active={selectedSeed.id === crop.id} disabled={level < crop.minLevel} onClick={() => setSelectedSeed(crop)}>
+              {level < crop.minLevel ? `Lvl ${crop.minLevel}` : `${crop.name} (${crop.cost}g)`}
             </Button>
-            <Button onClick={handleCancelPlanting} variant="secondary">
-              Cancel
-            </Button>
-          </div>
-        </div>
-      )}
+          ))}
+        </ButtonGroup>
+        {!hasAuto && (
+          <Button variant="upgrade" disabled={money < AUTO_HARVESTER_COST || level < 4} onClick={() => { setMoney(m => m - AUTO_HARVESTER_COST); setHasAuto(true); }}>
+            🤖 Buy Auto-Harvester (500g)
+          </Button>
+        )}
+        {hasAuto && <div style={{ color: '#2e7d32', fontWeight: 'bold' }}>Drone Active 🛸</div>}
+      </Controls>
 
-      <div style={{ marginTop: '20px' }}>
-        <Button onClick={() => setIsPlanting(!isPlanting)} variant="primary">
-          {isPlanting ? 'Cancel Planting' : 'Plant'}
-        </Button>
-        <Button onClick={() => { /* Implement delete plant logic */ }} variant="danger">
-          Delete Plant
-        </Button>
-        <QuestLog quests={quests} onQuestComplete={handleQuestComplete} onOpenQuestDetail={openQuestDetail} />
-      </div>
-      <CraftingMenu inventory={inventory} recipes={recipes} onCraft={handleCraft} />
-
-      {isBuildingPanelOpen && (
-        <BuildingInteractionPanel
-          building={selectedBuilding}
-          onClose={closeBuildingPanel}
-          onAction={handleBuildingAction}
-        />
-      )}
-      {isAnimalPanelOpen && (
-        <AnimalInteractionPanel
-          animal={selectedAnimal}
-          onClose={closeAnimalPanel}
-          onAction={handleAnimalAction}
-        />
-      )}
-    </div>
+      <button onClick={() => {localStorage.clear(); window.location.reload();}} style={{ marginTop: '30px', opacity: 0.4, border: 'none', background: 'none', cursor: 'pointer' }}>Reset Profile</button>
+    </GameContainer>
   );
-};
-
-export default App;
+}
