@@ -1,233 +1,188 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import styled, { keyframes } from 'styled-components';
 
 // --- Constants ---
 const CROPS = {
-  WHEAT: { id: 'WHEAT', name: 'Wheat', cost: 10, revenue: 25, growthTime: 5, xp: 15, minLevel: 1 },
-  CORN: { id: 'CORN', name: 'Corn', cost: 40, revenue: 100, growthTime: 12, xp: 45, minLevel: 3 },
-  CARROT: { id: 'CARROT', name: 'Carrot', cost: 100, revenue: 300, growthTime: 25, xp: 120, minLevel: 5 },
+  WHEAT: { id: 'WHEAT', name: 'Wheat', cost: 10, basePrice: 25, growthTime: 5, xp: 15, minLevel: 1, icon: '🌾' },
+  CORN: { id: 'CORN', name: 'Corn', cost: 40, basePrice: 100, growthTime: 12, xp: 45, minLevel: 3, icon: '🌽' },
+  CARROT: { id: 'CARROT', name: 'Carrot', cost: 100, basePrice: 300, growthTime: 25, xp: 120, minLevel: 5, icon: '🥕' },
 };
 
-const WEATHER_TYPES = {
-  SUNNY: { label: 'Sunny', icon: '☀️', multiplier: 1, color: '#FFF9C4' },
-  RAIN: { label: 'Raining', icon: '🌧️', multiplier: 2, color: '#B3E5FC' },
-  HEATWAVE: { label: 'Heatwave', icon: '🔥', multiplier: 0.5, color: '#FFCCBC' },
+const WEATHER = {
+  SUNNY: { label: 'Sunny', mult: 1, color: '#FFF9C4', icon: '☀️' },
+  RAIN: { label: 'Rain', mult: 2, color: '#B3E5FC', icon: '🌧️' },
+  HEAT: { label: 'Heatwave', mult: 0.5, color: '#FFCCBC', icon: '🔥' },
 };
-
-const GROWTH_STAGES = { SEED: 0, SPROUT: 1, MATURE: 2 };
-const XP_PER_LEVEL = 200;
-const AUTO_HARVESTER_COST = 500;
 
 // --- Animations ---
-const jitter = keyframes`
-  0% { transform: translate(0,0) rotate(0deg); }
-  25% { transform: translate(2px, 2px) rotate(5deg); }
-  50% { transform: translate(-2px, 1px) rotate(-5deg); }
-  75% { transform: translate(1px, -1px) rotate(3deg); }
-  100% { transform: translate(0,0) rotate(0deg); }
+const sparkle = keyframes`
+  0% { filter: brightness(1) drop-shadow(0 0 0 gold); }
+  50% { filter: brightness(1.5) drop-shadow(0 0 10px gold); }
+  100% { filter: brightness(1) drop-shadow(0 0 0 gold); }
 `;
-
-const PlotPulse = keyframes` 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } `;
 
 // --- Styled Components ---
 const GameContainer = styled.div`
   display: flex; flex-direction: column; align-items: center;
   font-family: 'Segoe UI', sans-serif; background-color: ${props => props.bgColor};
-  transition: background-color 2s ease; min-height: 100vh; padding: 20px;
+  transition: background-color 2s ease; min-height: 100vh; padding: 15px;
 `;
 
-const Header = styled.div`
-  background: #5d4037; color: white; padding: 15px 30px; width: 100%; max-width: 400px;
-  border-radius: 15px; margin-bottom: 15px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+const Section = styled.div`
+  background: white; border: 3px solid #5d4037; border-radius: 12px;
+  width: 100%; max-width: 450px; padding: 12px; margin-bottom: 12px; box-shadow: 0 4px 0 #5d4037;
 `;
 
-const HUD = styled.div` display: flex; gap: 10px; margin-bottom: 15px; `;
-
-const Badge = styled.div`
-  background: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 14px;
-  border: 2px solid #5d4037; display: flex; align-items: center; gap: 5px;
+const TrophyRack = styled.div`
+  display: flex; gap: 8px; justify-content: center; margin-top: 10px; flex-wrap: wrap;
 `;
 
-const FarmGrid = styled.div`
-  display: grid; grid-template-columns: repeat(3, 100px); grid-gap: 12px; margin-bottom: 20px;
+const Trophy = styled.div`
+  font-size: 20px; filter: ${props => props.unlocked ? 'none' : 'grayscale(1) opacity(0.3)'};
+  background: #f5f5f5; padding: 5px; border-radius: 50%; border: 2px solid #ddd;
+  transition: all 0.5s ease;
 `;
 
 const Plot = styled.div`
-  width: 100px; height: 100px; position: relative;
-  background-color: ${props => props.locked ? '#bdbdbd' : props.isReady ? '#aed581' : '#8d6e63'};
-  border: 4px solid #5d4037; border-radius: 12px; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; cursor: pointer;
-  animation: ${props => props.isReady ? PlotPulse : 'none'} 1.5s infinite;
-  opacity: ${props => props.locked ? 0.5 : 1};
+  aspect-ratio: 1/1; background: ${props => props.isReady ? '#aed581' : '#8d6e63'};
+  border: 4px solid ${props => props.isGolden ? '#ffd700' : '#5d4037'};
+  border-radius: 10px; position: relative; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  animation: ${props => props.isGolden ? sparkle : 'none'} 1s infinite;
 `;
 
-const PestOverlay = styled.div`
-  position: absolute; font-size: 40px; z-index: 10;
-  animation: ${jitter} 0.3s infinite;
-  cursor: crosshair;
+const GoldenTag = styled.div`
+  position: absolute; top: -10px; background: gold; color: #5d4037;
+  font-size: 9px; font-weight: bold; padding: 2px 5px; border-radius: 5px; border: 1px solid #5d4037;
 `;
-
-const ProgressBar = styled.div` width: 70%; height: 6px; background: #4e342e; border-radius: 3px; margin-top: 8px; `;
-const ProgressFill = styled.div` height: 100%; background: #8bc34a; width: ${props => props.progress}%; `;
-
-const Controls = styled.div` display: flex; flex-direction: column; gap: 12px; align-items: center; `;
-const ButtonGroup = styled.div` display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; `;
 
 const Button = styled.button`
-  padding: 10px 15px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer;
-  background-color: ${props => props.variant === 'upgrade' ? '#ab47bc' : props.active ? '#388e3c' : '#81c784'};
-  box-shadow: 0 4px ${props => props.variant === 'upgrade' ? '#7b1fa2' : props.active ? '#1b5e20' : '#2e7d32'};
-  &:disabled { background-color: #bdbdbd; box-shadow: 0 4px #9e9e9e; cursor: not-allowed; }
+  background: ${props => props.variant === 'prestige' ? '#673ab7' : props.primary ? '#388e3c' : '#5d4037'};
+  color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer;
+  &:disabled { opacity: 0.3; }
 `;
 
-// --- Main App Component ---
+// --- Main App ---
 export default function App() {
-  const [money, setMoney] = useState(() => JSON.parse(localStorage.getItem('zf-v4-money')) ?? 50);
-  const [xp, setXp] = useState(() => JSON.parse(localStorage.getItem('zf-v4-xp')) ?? 0);
-  const [plots, setPlots] = useState(() => JSON.parse(localStorage.getItem('zf-v4-plots')) ?? Array(9).fill(null));
-  const [hasAuto, setHasAuto] = useState(() => JSON.parse(localStorage.getItem('zf-v4-auto')) ?? false);
+  const [money, setMoney] = useState(() => JSON.parse(localStorage.getItem('zf-v8-money')) ?? 50);
+  const [xp, setXp] = useState(() => JSON.parse(localStorage.getItem('zf-v8-xp')) ?? 0);
+  const [multiplier, setMultiplier] = useState(() => JSON.parse(localStorage.getItem('zf-v8-mult')) ?? 1);
+  const [inventory, setInventory] = useState(() => JSON.parse(localStorage.getItem('zf-v8-inv')) ?? { WHEAT: 0, CORN: 0, CARROT: 0 });
+  const [plots, setPlots] = useState(() => JSON.parse(localStorage.getItem('zf-v8-plots')) ?? Array(9).fill(null));
+  const [hasAuto, setHasAuto] = useState(() => JSON.parse(localStorage.getItem('zf-v8-auto')) ?? false);
   const [weather, setWeather] = useState('SUNNY');
-  const [weatherTicks, setWeatherTicks] = useState(15);
-  const [selectedSeed, setSelectedSeed] = useState(CROPS.WHEAT);
+  const [market, setMarket] = useState({ WHEAT: 25, CORN: 100, CARROT: 300 });
 
-  const level = Math.floor(xp / XP_PER_LEVEL) + 1;
-  const unlockedPlotsCount = level >= 5 ? 9 : level >= 3 ? 6 : 3;
+  const level = Math.floor(xp / 250) + 1;
+  const netWorth = Math.floor(money + Object.keys(inventory).reduce((acc, k) => acc + (inventory[k] * market[k] * multiplier), 0));
+
+  // Trophies Logic
+  const trophies = useMemo(() => [
+    { id: 'rich', icon: '💰', label: 'Millionaire', hint: '10k Net Worth', unlocked: netWorth >= 10000 },
+    { id: 'prestige', icon: '👑', label: 'Royal Lineage', hint: 'Prestige once', unlocked: multiplier > 1 },
+    { id: 'automation', icon: '🤖', label: 'Robo-Farm', hint: 'Buy Drone', unlocked: hasAuto },
+    { id: 'expert', icon: '🎓', label: 'Master', hint: 'Level 10', unlocked: level >= 10 },
+  ], [netWorth, multiplier, hasAuto, level]);
 
   useEffect(() => {
-    localStorage.setItem('zf-v4-money', JSON.stringify(money));
-    localStorage.setItem('zf-v4-xp', JSON.stringify(xp));
-    localStorage.setItem('zf-v4-plots', JSON.stringify(plots));
-    localStorage.setItem('zf-v4-auto', JSON.stringify(hasAuto));
-  }, [money, xp, plots, hasAuto]);
+    localStorage.setItem('zf-v8-money', JSON.stringify(money));
+    localStorage.setItem('zf-v8-xp', JSON.stringify(xp));
+    localStorage.setItem('zf-v8-mult', JSON.stringify(multiplier));
+    localStorage.setItem('zf-v8-inv', JSON.stringify(inventory));
+    localStorage.setItem('zf-v8-plots', JSON.stringify(plots));
+    localStorage.setItem('zf-v8-auto', JSON.stringify(hasAuto));
+  }, [money, xp, multiplier, inventory, plots, hasAuto]);
 
-  // Main Game Loop
   useEffect(() => {
-    const interval = setInterval(() => {
-      // 1. Weather Update
-      setWeatherTicks(prev => {
-        if (prev <= 1) {
-          const types = Object.keys(WEATHER_TYPES);
-          setWeather(types[Math.floor(Math.random() * types.length)]);
-          return 15 + Math.floor(Math.random() * 15);
+    const timer = setInterval(() => {
+      if (Math.random() < 0.1) setWeather(Object.keys(WEATHER)[Math.floor(Math.random() * 3)]);
+      
+      setPlots(prev => prev.map((p, i) => {
+        if (!p) return null;
+        
+        // Random Golden Event (0.5% chance per tick for non-golden growing crops)
+        if (!p.isGolden && p.progress < 100 && Math.random() < 0.005) {
+          return { ...p, isGolden: true };
         }
-        return prev - 1;
-      });
 
-      // 2. Plot Updates
-      let earnedMoney = 0;
-      let earnedXp = 0;
+        const inc = (100 / p.type.growthTime) * WEATHER[weather].mult;
+        const newProg = Math.min(p.progress + inc, 100);
 
-      setPlots(currentPlots => currentPlots.map(plot => {
-        if (!plot) return null;
-
-        // Auto-harvest (only if no pests)
-        if (plot.stage === 2 && hasAuto && !plot.hasPest) {
-          earnedMoney += plot.type.revenue;
-          earnedXp += plot.type.xp;
+        if (newProg === 100 && hasAuto && !p.hasPest) {
+          const goldBonus = p.isGolden ? 10 : 1;
+          setXp(v => v + (p.type.xp * multiplier * goldBonus));
+          if (p.isGolden) setMoney(m => m + (p.type.basePrice * multiplier * 10)); // Instant cash for gold auto-harvest
+          else setInventory(inv => ({ ...inv, [p.type.id]: inv[p.type.id] + 1 }));
           return null;
         }
-
-        if (plot.stage === 2) return plot;
-
-        // Pest Spawning (5% chance if crop is growing and doesn't have a pest)
-        if (!plot.hasPest && Math.random() < 0.05) {
-          return { ...plot, hasPest: true };
-        }
-
-        // Growth: Halted by pests
-        if (plot.hasPest) return plot;
-
-        const growthStep = (100 / plot.type.growthTime) * WEATHER_TYPES[weather].multiplier;
-        const newProgress = Math.min(plot.progress + growthStep, 100);
-        return { 
-          ...plot, 
-          progress: newProgress, 
-          stage: newProgress >= 100 ? 2 : (newProgress >= 50 ? 1 : 0) 
-        };
+        return { ...p, progress: newProg };
       }));
-
-      if (earnedMoney > 0) setMoney(m => m + earnedMoney);
-      if (earnedXp > 0) setXp(x => x + earnedXp);
     }, 1000);
+    return () => clearInterval(timer);
+  }, [weather, hasAuto, multiplier]);
 
-    return () => clearInterval(interval);
-  }, [weather, hasAuto]);
-
-  const handlePlotClick = (index, e) => {
-    const plot = plots[index];
-    if (!plot && index < unlockedPlotsCount) {
-        if (money >= selectedSeed.cost && level >= selectedSeed.minLevel) {
-            setMoney(m => m - selectedSeed.cost);
-            setPlots(ps => ps.map((p, i) => i === index ? { type: selectedSeed, stage: 0, progress: 0, hasPest: false } : p));
-        }
-        return;
+  const handleHarvest = (p, i) => {
+    const goldBonus = p.isGolden ? 10 : 1;
+    setXp(v => v + (p.type.xp * multiplier * goldBonus));
+    if (p.isGolden) {
+        setMoney(m => m + (p.type.basePrice * multiplier * goldBonus));
+    } else {
+        setInventory(inv => ({ ...inv, [p.type.id]: inv[p.type.id] + 1 }));
     }
-
-    // Handle Pest Click (Stop propagation to prevent accidental harvest)
-    if (plot?.hasPest) {
-      e.stopPropagation();
-      setPlots(ps => ps.map((p, i) => i === index ? { ...p, hasPest: false } : p));
-      return;
-    }
-
-    // Manual Harvest
-    if (plot?.stage === 2) {
-      setMoney(m => m + plot.type.revenue);
-      setXp(x => x + plot.type.xp);
-      setPlots(ps => ps.map((p, i) => i === index ? null : p));
-    }
+    setPlots(ps => ps.map((x, idx) => idx === i ? null : x));
   };
 
   return (
-    <GameContainer bgColor={WEATHER_TYPES[weather].color}>
-      <Header>
-        <h2 style={{ margin: 0 }}>Zen Farmer Lvl {level}</h2>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', margin: '10px 0' }}>
-          <span>💰 {money}</span> <span>✨ {xp} XP</span>
+    <GameContainer bgColor={WEATHER[weather].color}>
+      <Section style={{ background: '#5d4037', color: 'white', textAlign: 'center' }}>
+        <h2 style={{ margin: 0 }}>Zen Farmer Gen. {multiplier}</h2>
+        <TrophyRack>
+          {trophies.map(t => <Trophy key={t.id} unlocked={t.unlocked} title={`${t.label}: ${t.hint}`}>{t.icon}</Trophy>)}
+        </TrophyRack>
+      </Section>
+
+      <Section>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+          <span>{WEATHER[weather].icon} {WEATHER[weather].label}</span>
+          <span>💰 {money}g | Level {level}</span>
         </div>
-        <ProgressBar style={{ width: '100%', background: '#3e2723' }}>
-            <ProgressFill progress={(xp % XP_PER_LEVEL) / 2} style={{ background: '#00e5ff' }} />
-        </ProgressBar>
-      </Header>
+      </Section>
 
-      <HUD>
-        <Badge>{WEATHER_TYPES[weather].icon} {WEATHER_TYPES[weather].label} ({weatherTicks}s)</Badge>
-        {hasAuto && <Badge>🛸 Drone On</Badge>}
-      </HUD>
-
-      <FarmGrid>
-        {plots.map((plot, i) => (
-          <Plot key={i} locked={i >= unlockedPlotsCount} isReady={plot?.stage === 2 && !plot.hasPest} onClick={(e) => handlePlotClick(i, e)}>
-            {plot?.hasPest && <PestOverlay>🐛</PestOverlay>}
-            {i >= unlockedPlotsCount ? '🔒' : plot ? (
-              <>
-                <span style={{ fontSize: '32px', filter: plot.hasPest ? 'grayscale(0.5)' : 'none' }}>
-                  {plot.stage === 2 ? (plot.type.id === 'WHEAT' ? '🌾' : plot.type.id === 'CORN' ? '🌽' : '🥕') : (plot.stage === 1 ? '🌿' : '🌱')}
-                </span>
-                {!plot.hasPest && <ProgressBar><ProgressFill progress={plot.progress} /></ProgressBar>}
-                {plot.hasPest && <span style={{ fontSize: '10px', color: '#b71c1c', fontWeight: 'bold' }}>INFESTED!</span>}
-              </>
-            ) : <span style={{ opacity: 0.1, fontSize: '24px' }}>+</span>}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', width: '100%', maxWidth: '400px' }}>
+        {plots.map((p, i) => (
+          <Plot key={i} isGolden={p?.isGolden} isReady={p?.progress === 100} onClick={() => p?.progress === 100 && handleHarvest(p, i)}>
+            {p?.isGolden && <GoldenTag>10X GOLD</GoldenTag>}
+            {p ? (
+              <span style={{ fontSize: '2.5rem' }}>{p.progress === 100 ? CROPS[p.type.id].icon : '🌱'}</span>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                {Object.values(CROPS).map(c => (
+                  <button key={c.id} onClick={() => setPlots(ps => ps.map((x, idx) => idx === i ? { type: c, progress: 0, isGolden: false } : x))} disabled={level < c.minLevel || money < c.cost} style={{ fontSize: '9px' }}>{c.icon}</button>
+                ))}
+              </div>
+            )}
           </Plot>
         ))}
-      </FarmGrid>
+      </div>
 
-      <Controls>
-        <ButtonGroup>
-          {Object.values(CROPS).map(crop => (
-            <Button key={crop.id} active={selectedSeed.id === crop.id} disabled={level < crop.minLevel} onClick={() => setSelectedSeed(crop)}>
-              {level < crop.minLevel ? `Lvl ${crop.minLevel}` : `${crop.name}`}
-            </Button>
-          ))}
-        </ButtonGroup>
-        {!hasAuto && (
-          <Button variant="upgrade" disabled={money < AUTO_HARVESTER_COST || level < 4} onClick={() => { setMoney(m => m - AUTO_HARVESTER_COST); setHasAuto(true); }}>
-            Buy Drone (500g)
-          </Button>
-        )}
-      </Controls>
+      <Section style={{ marginTop: '15px' }}>
+        <div style={{ fontWeight: 'bold', fontSize: '12px' }}>BARN (STOCK)</div>
+        <div style={{ display: 'flex', justifyContent: 'space-around', margin: '10px 0' }}>
+          {Object.keys(inventory).map(id => <div key={id}>{CROPS[id].icon} {inventory[id]}</div>)}
+        </div>
+        <Button primary style={{ width: '100%' }} onClick={() => {
+          let total = 0;
+          Object.keys(inventory).forEach(id => total += inventory[id] * market[id] * multiplier);
+          setMoney(m => m + total);
+          setInventory({ WHEAT: 0, CORN: 0, CARROT: 0 });
+        }}>Sell for {Object.keys(inventory).reduce((acc, k) => acc + (inventory[k] * market[k] * multiplier), 0)}g</Button>
+      </Section>
 
-      <button onClick={() => {localStorage.clear(); window.location.reload();}} style={{ marginTop: '30px', opacity: 0.3, border: 'none', background: 'none', cursor: 'pointer', fontSize: '12px' }}>Reset All Progress</button>
+      <Button variant="prestige" disabled={netWorth < 10000} onClick={() => {
+         setMultiplier(m => m + 1); setMoney(50); setXp(0); setPlots(Array(9).fill(null)); setHasAuto(false);
+      }} style={{ width: '100%', maxWidth: '450px' }}>
+        {netWorth < 10000 ? 'Ascension Requires 10k Worth' : '🚀 ASCEND TO NEXT GEN'}
+      </Button>
     </GameContainer>
   );
 }
