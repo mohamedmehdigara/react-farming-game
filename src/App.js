@@ -1,188 +1,223 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import styled, { keyframes } from 'styled-components';
+import React, { useState, useEffect } from 'react';
+import styled from 'styled-components';
 
-// --- Constants ---
-const CROPS = {
-  WHEAT: { id: 'WHEAT', name: 'Wheat', cost: 10, basePrice: 25, growthTime: 5, xp: 15, minLevel: 1, icon: '🌾' },
-  CORN: { id: 'CORN', name: 'Corn', cost: 40, basePrice: 100, growthTime: 12, xp: 45, minLevel: 3, icon: '🌽' },
-  CARROT: { id: 'CARROT', name: 'Carrot', cost: 100, basePrice: 300, growthTime: 25, xp: 120, minLevel: 5, icon: '🥕' },
+// --- Static Data ---
+const CROP_DATA = {
+  WHEAT: { id: 'WHEAT', name: 'Wheat', cost: 10, basePrice: 25, growthTime: 5, icon: '🌾' },
+  CORN: { id: 'CORN', name: 'Corn', cost: 40, basePrice: 100, growthTime: 12, icon: '🌽' },
+  CARROT: { id: 'CARROT', name: 'Carrot', cost: 100, basePrice: 300, growthTime: 25, icon: '🥕' },
 };
 
-const WEATHER = {
-  SUNNY: { label: 'Sunny', mult: 1, color: '#FFF9C4', icon: '☀️' },
-  RAIN: { label: 'Rain', mult: 2, color: '#B3E5FC', icon: '🌧️' },
-  HEAT: { label: 'Heatwave', mult: 0.5, color: '#FFCCBC', icon: '🔥' },
+const RECIPES = {
+  FLOUR: { id: 'FLOUR', name: 'Fine Flour', ingredients: { WHEAT: 2 }, sellPrice: 80, icon: '🥡' },
+  CORNBREAD: { id: 'CORNBREAD', name: 'Cornbread', ingredients: { WHEAT: 1, CORN: 1 }, sellPrice: 250, icon: '🍞' },
+  VEGGIE_CAKE: { id: 'VEGGIE_CAKE', name: 'Veggie Cake', ingredients: { WHEAT: 1, CARROT: 1 }, sellPrice: 650, icon: '🍰' },
 };
 
-// --- Animations ---
-const sparkle = keyframes`
-  0% { filter: brightness(1) drop-shadow(0 0 0 gold); }
-  50% { filter: brightness(1.5) drop-shadow(0 0 10px gold); }
-  100% { filter: brightness(1) drop-shadow(0 0 0 gold); }
-`;
+const DECOR_DATA = {
+  STATION: { id: 'STATION', name: 'Weather Station', cost: 1500, icon: '📡', buff: 'Unlock Forecast' },
+  HARVESTER: { id: 'HARVESTER', name: 'Hired Harvester', cost: 2500, icon: '👨‍🌾', buff: 'Auto-Harvesting' },
+  SALESMAN: { id: 'SALESMAN', name: 'Hired Salesman', cost: 3000, icon: '💼', buff: 'Auto-Sell (+5%)' },
+};
+
+const SEASONS = {
+  SPRING: { id: 'SPRING', name: 'Spring', icon: '🌸', color: '#e8f5e9', mult: 1.5, next: 'SUMMER' },
+  SUMMER: { id: 'SUMMER', name: 'Summer', icon: '☀️', color: '#fffde7', mult: 0.8, next: 'FALL' },
+  FALL: { id: 'FALL', name: 'Fall', icon: '🍂', color: '#fff3e0', mult: 1.2, next: 'WINTER' },
+  WINTER: { id: 'WINTER', name: 'Winter', icon: '❄️', color: '#e3f2fd', mult: 0.4, next: 'SPRING' },
+};
 
 // --- Styled Components ---
 const GameContainer = styled.div`
   display: flex; flex-direction: column; align-items: center;
-  font-family: 'Segoe UI', sans-serif; background-color: ${props => props.bgColor};
-  transition: background-color 2s ease; min-height: 100vh; padding: 15px;
+  font-family: 'Arial', sans-serif; background: ${props => props.bgColor}; 
+  transition: background 2s; min-height: 100vh; padding: 15px;
 `;
 
 const Section = styled.div`
-  background: white; border: 3px solid #5d4037; border-radius: 12px;
-  width: 100%; max-width: 450px; padding: 12px; margin-bottom: 12px; box-shadow: 0 4px 0 #5d4037;
+  background: white; border: 3px solid #4e342e; border-radius: 12px;
+  width: 100%; max-width: 480px; padding: 12px; margin-bottom: 12px;
 `;
 
-const TrophyRack = styled.div`
-  display: flex; gap: 8px; justify-content: center; margin-top: 10px; flex-wrap: wrap;
+const TabBar = styled.div` display: flex; width: 100%; max-width: 480px; gap: 5px; margin-bottom: 10px; `;
+const Tab = styled.button`
+  flex: 1; padding: 10px; border-radius: 8px; border: none; cursor: pointer;
+  background: ${props => props.active ? '#4e342e' : '#d7ccc8'};
+  color: ${props => props.active ? 'white' : '#4e342e'}; font-weight: bold;
 `;
 
-const Trophy = styled.div`
-  font-size: 20px; filter: ${props => props.unlocked ? 'none' : 'grayscale(1) opacity(0.3)'};
-  background: #f5f5f5; padding: 5px; border-radius: 50%; border: 2px solid #ddd;
-  transition: all 0.5s ease;
-`;
-
+const FarmGrid = styled.div` display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; `;
 const Plot = styled.div`
-  aspect-ratio: 1/1; background: ${props => props.isReady ? '#aed581' : '#8d6e63'};
-  border: 4px solid ${props => props.isGolden ? '#ffd700' : '#5d4037'};
-  border-radius: 10px; position: relative; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  animation: ${props => props.isGolden ? sparkle : 'none'} 1s infinite;
-`;
-
-const GoldenTag = styled.div`
-  position: absolute; top: -10px; background: gold; color: #5d4037;
-  font-size: 9px; font-weight: bold; padding: 2px 5px; border-radius: 5px; border: 1px solid #5d4037;
+  aspect-ratio: 1/1; background: ${props => props.ready ? '#8bc34a' : '#a1887f'};
+  border: 3px solid #4e342e; border-radius: 8px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; position: relative;
 `;
 
 const Button = styled.button`
-  background: ${props => props.variant === 'prestige' ? '#673ab7' : props.primary ? '#388e3c' : '#5d4037'};
-  color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer;
-  &:disabled { opacity: 0.3; }
+  background: ${props => props.color || '#4e342e'}; color: white; border: none;
+  padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer;
+  &:disabled { opacity: 0.4; }
 `;
 
-// --- Main App ---
 export default function App() {
-  const [money, setMoney] = useState(() => JSON.parse(localStorage.getItem('zf-v8-money')) ?? 50);
-  const [xp, setXp] = useState(() => JSON.parse(localStorage.getItem('zf-v8-xp')) ?? 0);
-  const [multiplier, setMultiplier] = useState(() => JSON.parse(localStorage.getItem('zf-v8-mult')) ?? 1);
-  const [inventory, setInventory] = useState(() => JSON.parse(localStorage.getItem('zf-v8-inv')) ?? { WHEAT: 0, CORN: 0, CARROT: 0 });
-  const [plots, setPlots] = useState(() => JSON.parse(localStorage.getItem('zf-v8-plots')) ?? Array(9).fill(null));
-  const [hasAuto, setHasAuto] = useState(() => JSON.parse(localStorage.getItem('zf-v8-auto')) ?? false);
-  const [weather, setWeather] = useState('SUNNY');
-  const [market, setMarket] = useState({ WHEAT: 25, CORN: 100, CARROT: 300 });
+  const [activeTab, setActiveTab] = useState('farm');
+  const [money, setMoney] = useState(() => JSON.parse(localStorage.getItem('zf-v14-money')) ?? 250);
+  const [plots, setPlots] = useState(() => JSON.parse(localStorage.getItem('zf-v14-plots')) ?? Array(9).fill(null));
+  const [inv, setInv] = useState(() => JSON.parse(localStorage.getItem('zf-v14-inv')) ?? { WHEAT: 0, CORN: 0, CARROT: 0, FLOUR: 0, CORNBREAD: 0, VEGGIE_CAKE: 0 });
+  const [decor, setDecor] = useState(() => JSON.parse(localStorage.getItem('zf-v14-decor')) ?? []);
+  const [season, setSeason] = useState('SPRING');
+  const [seasonTimer, setSeasonTimer] = useState(60);
 
-  const level = Math.floor(xp / 250) + 1;
-  const netWorth = Math.floor(money + Object.keys(inventory).reduce((acc, k) => acc + (inventory[k] * market[k] * multiplier), 0));
+  const hasItem = (id) => decor.includes(id);
 
-  // Trophies Logic
-  const trophies = useMemo(() => [
-    { id: 'rich', icon: '💰', label: 'Millionaire', hint: '10k Net Worth', unlocked: netWorth >= 10000 },
-    { id: 'prestige', icon: '👑', label: 'Royal Lineage', hint: 'Prestige once', unlocked: multiplier > 1 },
-    { id: 'automation', icon: '🤖', label: 'Robo-Farm', hint: 'Buy Drone', unlocked: hasAuto },
-    { id: 'expert', icon: '🎓', label: 'Master', hint: 'Level 10', unlocked: level >= 10 },
-  ], [netWorth, multiplier, hasAuto, level]);
-
+  // --- Game Loop ---
   useEffect(() => {
-    localStorage.setItem('zf-v8-money', JSON.stringify(money));
-    localStorage.setItem('zf-v8-xp', JSON.stringify(xp));
-    localStorage.setItem('zf-v8-mult', JSON.stringify(multiplier));
-    localStorage.setItem('zf-v8-inv', JSON.stringify(inventory));
-    localStorage.setItem('zf-v8-plots', JSON.stringify(plots));
-    localStorage.setItem('zf-v8-auto', JSON.stringify(hasAuto));
-  }, [money, xp, multiplier, inventory, plots, hasAuto]);
+    const ticker = setInterval(() => {
+      // 1. Seasonal Transition
+      setSeasonTimer(t => {
+        if (t <= 1) {
+          setSeason(curr => SEASONS[curr].next);
+          return 60;
+        }
+        return t - 1;
+      });
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      if (Math.random() < 0.1) setWeather(Object.keys(WEATHER)[Math.floor(Math.random() * 3)]);
-      
+      // 2. Growth & Auto-Harvest
       setPlots(prev => prev.map((p, i) => {
         if (!p) return null;
-        
-        // Random Golden Event (0.5% chance per tick for non-golden growing crops)
-        if (!p.isGolden && p.progress < 100 && Math.random() < 0.005) {
-          return { ...p, isGolden: true };
-        }
-
-        const inc = (100 / p.type.growthTime) * WEATHER[weather].mult;
+        const inc = (100 / p.type.growthTime) * SEASONS[season].mult;
         const newProg = Math.min(p.progress + inc, 100);
-
-        if (newProg === 100 && hasAuto && !p.hasPest) {
-          const goldBonus = p.isGolden ? 10 : 1;
-          setXp(v => v + (p.type.xp * multiplier * goldBonus));
-          if (p.isGolden) setMoney(m => m + (p.type.basePrice * multiplier * 10)); // Instant cash for gold auto-harvest
-          else setInventory(inv => ({ ...inv, [p.type.id]: inv[p.type.id] + 1 }));
+        
+        if (newProg >= 100 && hasItem('HARVESTER')) {
+          handleHarvest(p, i);
           return null;
         }
         return { ...p, progress: newProg };
       }));
+
+      // 3. Auto-Salesman (every 60s)
+      if (hasItem('SALESMAN') && seasonTimer === 1) {
+        sellEverything(1.05); // 5% bonus
+      }
     }, 1000);
-    return () => clearInterval(timer);
-  }, [weather, hasAuto, multiplier]);
+    return () => clearInterval(ticker);
+  }, [season, decor, seasonTimer]);
 
   const handleHarvest = (p, i) => {
-    const goldBonus = p.isGolden ? 10 : 1;
-    setXp(v => v + (p.type.xp * multiplier * goldBonus));
-    if (p.isGolden) {
-        setMoney(m => m + (p.type.basePrice * multiplier * goldBonus));
-    } else {
-        setInventory(inv => ({ ...inv, [p.type.id]: inv[p.type.id] + 1 }));
-    }
+    setInv(prev => ({ ...prev, [p.type.id]: prev[p.type.id] + 1 }));
     setPlots(ps => ps.map((x, idx) => idx === i ? null : x));
   };
 
+  const cook = (recipe) => {
+    const canCook = Object.entries(recipe.ingredients).every(([ing, amt]) => inv[ing] >= amt);
+    if (canCook) {
+      setInv(prev => {
+        const next = { ...prev };
+        Object.entries(recipe.ingredients).forEach(([ing, amt]) => next[ing] -= amt);
+        next[recipe.id] = (next[recipe.id] || 0) + 1;
+        return next;
+      });
+    }
+  };
+
+  const sellEverything = (bonus = 1) => {
+    let total = 0;
+    Object.entries(inv).forEach(([id, count]) => {
+      const price = CROP_DATA[id] ? CROP_DATA[id].basePrice : RECIPES[id].sellPrice;
+      total += count * price * bonus;
+    });
+    setMoney(m => m + Math.floor(total));
+    setInv({ WHEAT: 0, CORN: 0, CARROT: 0, FLOUR: 0, CORNBREAD: 0, VEGGIE_CAKE: 0 });
+  };
+
+  useEffect(() => {
+    localStorage.setItem('zf-v14-money', JSON.stringify(money));
+    localStorage.setItem('zf-v14-inv', JSON.stringify(inv));
+    localStorage.setItem('zf-v14-plots', JSON.stringify(plots));
+    localStorage.setItem('zf-v14-decor', JSON.stringify(decor));
+  }, [money, inv, plots, decor]);
+
   return (
-    <GameContainer bgColor={WEATHER[weather].color}>
-      <Section style={{ background: '#5d4037', color: 'white', textAlign: 'center' }}>
-        <h2 style={{ margin: 0 }}>Zen Farmer Gen. {multiplier}</h2>
-        <TrophyRack>
-          {trophies.map(t => <Trophy key={t.id} unlocked={t.unlocked} title={`${t.label}: ${t.hint}`}>{t.icon}</Trophy>)}
-        </TrophyRack>
-      </Section>
-
-      <Section>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-          <span>{WEATHER[weather].icon} {WEATHER[weather].label}</span>
-          <span>💰 {money}g | Level {level}</span>
+    <GameContainer bgColor={SEASONS[season].color}>
+      <Section style={{ background: '#4e342e', color: 'white', textAlign: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <span>Generation 1</span>
+          <span style={{ fontWeight: 'bold' }}>💰 {money}g</span>
         </div>
+        <h2 style={{ margin: '8px 0' }}>{SEASONS[season].icon} {SEASONS[season].name}</h2>
+        {hasItem('STATION') && (
+          <div style={{ fontSize: '11px', background: 'rgba(0,0,0,0.2)', padding: '4px', borderRadius: '4px' }}>
+            Next: {SEASONS[season].next} in {seasonTimer}s
+          </div>
+        )}
       </Section>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', width: '100%', maxWidth: '400px' }}>
-        {plots.map((p, i) => (
-          <Plot key={i} isGolden={p?.isGolden} isReady={p?.progress === 100} onClick={() => p?.progress === 100 && handleHarvest(p, i)}>
-            {p?.isGolden && <GoldenTag>10X GOLD</GoldenTag>}
-            {p ? (
-              <span style={{ fontSize: '2.5rem' }}>{p.progress === 100 ? CROPS[p.type.id].icon : '🌱'}</span>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                {Object.values(CROPS).map(c => (
-                  <button key={c.id} onClick={() => setPlots(ps => ps.map((x, idx) => idx === i ? { type: c, progress: 0, isGolden: false } : x))} disabled={level < c.minLevel || money < c.cost} style={{ fontSize: '9px' }}>{c.icon}</button>
-                ))}
+      <TabBar>
+        <Tab active={activeTab === 'farm'} onClick={() => setActiveTab('farm')}>🌱 Farm</Tab>
+        <Tab active={activeTab === 'kitchen'} onClick={() => setActiveTab('kitchen')}>🍳 Kitchen</Tab>
+        <Tab active={activeTab === 'shop'} onClick={() => setActiveTab('shop')}>🏗️ Build</Tab>
+      </TabBar>
+
+      {activeTab === 'farm' && (
+        <>
+          <FarmGrid>
+            {plots.map((p, i) => (
+              <Plot key={i} ready={p?.progress === 100} onClick={() => p?.progress === 100 && handleHarvest(p, i)}>
+                {p ? (
+                  <span style={{ fontSize: '2rem' }}>{p.progress === 100 ? p.type.icon : '🌱'}</span>
+                ) : (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', justifyContent: 'center' }}>
+                    {Object.values(CROP_DATA).map(c => (
+                      <button key={c.id} onClick={() => { if(money >= c.cost) { setMoney(m => m - c.cost); setPlots(ps => ps.map((x, idx) => idx === i ? { type: c, progress: 0 } : x)); } }}>{c.icon}</button>
+                    ))}
+                  </div>
+                )}
+              </Plot>
+            ))}
+          </FarmGrid>
+          <Section style={{ marginTop: '12px' }}>
+            <div style={{ fontSize: '12px', fontWeight: 'bold' }}>STORAGE BIN</div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', margin: '8px 0' }}>
+              {Object.entries(inv).map(([id, count]) => count > 0 && <span key={id}>{(CROP_DATA[id] || RECIPES[id]).icon} x{count}</span>)}
+            </div>
+            <Button color="#2e7d32" style={{ width: '100%' }} onClick={() => sellEverything()}>Sell All Stock</Button>
+          </Section>
+        </>
+      )}
+
+      {activeTab === 'kitchen' && (
+        <Section>
+          <h3>Artisan Kitchen</h3>
+          {Object.values(RECIPES).map(r => (
+            <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #eee' }}>
+              <div>
+                <b>{r.icon} {r.name}</b><br/>
+                <small>Requires: {Object.entries(r.ingredients).map(([ing, amt]) => `${amt}x${CROP_DATA[ing].icon} `)}</small>
               </div>
-            )}
-          </Plot>
-        ))}
-      </div>
+              <Button disabled={!Object.entries(r.ingredients).every(([ing, amt]) => inv[ing] >= amt)} onClick={() => cook(r)}>
+                Cook (+{r.sellPrice}g)
+              </Button>
+            </div>
+          ))}
+        </Section>
+      )}
 
-      <Section style={{ marginTop: '15px' }}>
-        <div style={{ fontWeight: 'bold', fontSize: '12px' }}>BARN (STOCK)</div>
-        <div style={{ display: 'flex', justifyContent: 'space-around', margin: '10px 0' }}>
-          {Object.keys(inventory).map(id => <div key={id}>{CROPS[id].icon} {inventory[id]}</div>)}
-        </div>
-        <Button primary style={{ width: '100%' }} onClick={() => {
-          let total = 0;
-          Object.keys(inventory).forEach(id => total += inventory[id] * market[id] * multiplier);
-          setMoney(m => m + total);
-          setInventory({ WHEAT: 0, CORN: 0, CARROT: 0 });
-        }}>Sell for {Object.keys(inventory).reduce((acc, k) => acc + (inventory[k] * market[k] * multiplier), 0)}g</Button>
-      </Section>
-
-      <Button variant="prestige" disabled={netWorth < 10000} onClick={() => {
-         setMultiplier(m => m + 1); setMoney(50); setXp(0); setPlots(Array(9).fill(null)); setHasAuto(false);
-      }} style={{ width: '100%', maxWidth: '450px' }}>
-        {netWorth < 10000 ? 'Ascension Requires 10k Worth' : '🚀 ASCEND TO NEXT GEN'}
-      </Button>
+      {activeTab === 'shop' && (
+        <Section>
+          <h3>Hire & Infrastructure</h3>
+          {Object.values(DECOR_DATA).map(d => (
+            <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #eee' }}>
+              <div>
+                <b>{d.icon} {d.name}</b><br/>
+                <small>{d.buff}</small>
+              </div>
+              <Button disabled={money < d.cost || decor.includes(d.id)} onClick={() => { setMoney(m => m - d.cost); setDecor([...decor, d.id]); }}>
+                {decor.includes(d.id) ? 'Active' : `${d.cost}g`}
+              </Button>
+            </div>
+          ))}
+        </Section>
+      )}
     </GameContainer>
   );
 }
