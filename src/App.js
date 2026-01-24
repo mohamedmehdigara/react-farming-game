@@ -2,161 +2,189 @@ import React, { useState, useEffect } from 'react';
 import styled, { keyframes } from 'styled-components';
 
 // --- Animations ---
-const slide = keyframes`
-  0% { transform: translateX(100%); }
-  100% { transform: translateX(-100%); }
+const slide = keyframes` 
+  0% { transform: translateX(100%); } 
+  100% { transform: translateX(-100%); } 
 `;
 
 // --- Data ---
+const CROPS = {
+  WHEAT: { id: 'WHEAT', icon: '🌾', cost: 10, price: 25, time: 8, drain: 10 },
+  CORN: { id: 'CORN', icon: '🌽', cost: 40, price: 100, time: 15, drain: 20 },
+  CLOVER: { id: 'CLOVER', icon: '☘️', cost: 5, price: 0, time: 5, drain: -40 },
+  SUNGRAIN: { id: 'SUNGRAIN', icon: '✨', cost: 0, price: 1500, time: 30, drain: 50 }
+};
+
 const WEATHER = {
   CLEAR: { id: 'CLEAR', icon: '☀️', speed: 1, color: '#e8f5e9' },
   RAIN: { id: 'RAIN', icon: '🌧️', speed: 2, color: '#cfd8dc' },
   HEAT: { id: 'HEAT', icon: '🔥', speed: 3, color: '#ffe0b2' }
 };
 
-const CROPS = {
-  WHEAT: { id: 'WHEAT', icon: '🌾', cost: 10, price: 25, time: 8 },
-  CORN: { id: 'CORN', icon: '🌽', cost: 40, price: 100, time: 15 },
-};
-
 // --- Styled Components ---
 const GameWrap = styled.div`
   display: flex; flex-direction: column; align-items: center; min-height: 100vh;
-  background: ${props => props.bg}; transition: 2s; padding: 20px; font-family: 'Segoe UI', sans-serif;
+  background: ${props => props.bg}; transition: 3s; padding: 15px; font-family: sans-serif;
 `;
 
-const TickerBar = styled.div`
-  background: #3e2723; color: #ffeb3b; width: 100%; max-width: 450px; 
-  padding: 5px; overflow: hidden; white-space: nowrap; border-radius: 5px; margin-bottom: 10px;
-  font-weight: bold; font-size: 0.9rem; border: 2px solid #ffd600;
+const Ticker = styled.div`
+  background: #263238; color: #00e676; width: 100%; max-width: 480px; padding: 8px; 
+  overflow: hidden; white-space: nowrap; border-radius: 8px; margin-bottom: 10px; border: 2px solid #ffd600;
 `;
 
-const TickerText = styled.div`
-  display: inline-block; animation: ${slide} 15s linear infinite;
+// THIS WAS THE MISSING DEFINITION:
+const TickerText = styled.div` 
+  display: inline-block; 
+  animation: ${slide} 15s linear infinite; 
 `;
 
 const Section = styled.div`
-  background: white; border: 3px solid #3e2723; border-radius: 12px; width: 100%; max-width: 450px; padding: 15px; margin-bottom: 10px;
+  background: white; border: 3px solid #37474f; border-radius: 12px; width: 100%; max-width: 480px; padding: 12px; margin-bottom: 10px;
 `;
 
 const Plot = styled.div`
   aspect-ratio: 1/1; background: #8d6e63; border: 3px solid #3e2723; border-radius: 10px;
-  position: relative; display: flex; align-items: center; justify-content: center; cursor: pointer;
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer;
+`;
+
+const Meter = styled.div`
+  width: 80%; height: 5px; background: #eee; border-radius: 2px; margin-top: 3px;
+  & > div { height: 100%; background: ${props => props.color}; width: ${props => props.val}%; transition: 0.3s; }
 `;
 
 export default function App() {
-  const [money, setMoney] = useState(250);
-  const [inv, setInv] = useState({ WHEAT: 0, CORN: 0 });
+  const [money, setMoney] = useState(1000);
+  const [inv, setInv] = useState({ WHEAT: 0, CORN: 0, SUNGRAIN: 0 });
   const [weather, setWeather] = useState(WEATHER.CLEAR);
+  const [water, setWater] = useState(100);
   const [staff, setStaff] = useState({ harvester: false });
-  const [plots, setPlots] = useState(Array(9).fill({ type: null, progress: 0, pest: false, water: 100 }));
-  
-  // Market Ticker State
-  const [trend, setTrend] = useState('WHEAT');
-  const [news, setNews] = useState("Market is stable. Wheat prices are steady.");
+  const [event, setEvent] = useState({ name: "Stable Market", type: 'NONE' });
+  const [plots, setPlots] = useState(Array(9).fill({ type: null, progress: 0, soil: 100 }));
 
-  // --- Market Logic ---
+  // --- Market Event Timer ---
   useEffect(() => {
-    const marketInterval = setInterval(() => {
-      const keys = Object.keys(CROPS);
-      const newTrend = keys[Math.floor(Math.random() * keys.length)];
-      setTrend(newTrend);
-      setNews(`🔥 BOOM! High demand for ${newTrend}! Prices DOUBLED for a limited time! 🔥`);
-    }, 30000); // Change trend every 30s
-    return () => clearInterval(marketInterval);
+    const eTimer = setInterval(() => {
+      const events = [
+        { name: "🐞 LADYBUG BLITZ: 3x GROWTH SPEED!", type: 'LADYBUG' },
+        { name: "📉 MARKET CRASH: SELL PRICES HALVED!", type: 'CRASH' },
+        { name: "🌞 HEATWAVE: WATER DEPLETING FAST!", type: 'HEAT' }
+      ];
+      const selected = events[Math.floor(Math.random() * events.length)];
+      setEvent(selected);
+      if (selected.type === 'HEAT') setWeather(WEATHER.HEAT);
+      
+      setTimeout(() => {
+        setEvent({ name: "Stable Market", type: 'NONE' });
+        setWeather(WEATHER.CLEAR);
+      }, 15000);
+    }, 45000);
+    return () => clearInterval(eTimer);
   }, []);
 
-  // --- Weather Logic ---
-  useEffect(() => {
-    const wTimer = setInterval(() => {
-      const keys = Object.keys(WEATHER);
-      setWeather(WEATHER[keys[Math.floor(Math.random() * keys.length)]]);
-    }, 15000);
-    return () => clearInterval(wTimer);
-  }, []);
-
-  // --- Core Game Loop ---
+  // --- Core Engine ---
   useEffect(() => {
     const ticker = setInterval(() => {
-      setPlots(currentPlots => currentPlots.map(p => {
+      if (weather.id === 'RAIN') setWater(w => Math.min(100, w + 2));
+
+      setPlots(current => current.map((p, i) => {
         if (!p.type) return p;
 
-        let currentWater = p.water;
-        if (weather.id === 'HEAT') currentWater = Math.max(0, currentWater - 5);
-        if (weather.id === 'RAIN') currentWater = Math.min(100, currentWater + 10);
-
-        const canGrow = !p.pest && currentWater > 0;
-        const growth = canGrow ? (100 / p.type.time) * weather.speed : 0;
+        let mult = weather.speed * (p.soil / 100);
+        if (event.type === 'LADYBUG') mult *= 3;
+        
+        if (water <= 0 && weather.id !== 'RAIN') return p;
+        
+        const growth = (100 / p.type.time) * mult;
         const nextProgress = Math.min(p.progress + growth, 100);
 
+        setWater(w => Math.max(0, w - 0.02));
+
         if (nextProgress >= 100 && staff.harvester) {
-          setInv(prev => ({ ...prev, [p.type.id]: (prev[p.type.id] || 0) + 1 }));
-          return { type: null, progress: 0, pest: false, water: 100 };
+          handleHarvest(i, p);
+          return { type: null, progress: 0, soil: Math.max(0, Math.min(100, p.soil - p.type.drain)) };
         }
 
-        return { ...p, progress: nextProgress, water: currentWater };
+        return { ...p, progress: nextProgress };
       }));
     }, 1000);
     return () => clearInterval(ticker);
-  }, [weather, staff.harvester]);
+  }, [weather, event, water, staff.harvester]);
 
-  const plant = (i, crop) => {
-    if (money >= crop.cost) {
-      setMoney(prev => prev - crop.cost);
-      setPlots(ps => ps.map((x, idx) => idx === i ? { type: crop, progress: 0, pest: false, water: 100 } : x));
+  const handleHarvest = (i, p) => {
+    if (p.type.price > 0) setInv(v => ({ ...v, [p.type.id]: v[p.type.id] + 1 }));
+    
+    // Check for Hybrid mutation (adjacent check)
+    const neighbors = [i-1, i+1, i-3, i+3];
+    neighbors.forEach(n => {
+      if (plots[n] && plots[n].type && plots[n].type.id !== p.type.id && Math.random() < 0.1) {
+        setInv(v => ({ ...v, SUNGRAIN: v.SUNGRAIN + 1 }));
+      }
+    });
+  };
+
+  const manualHarvest = (i) => {
+    const p = plots[i];
+    if (p.progress >= 100) {
+      handleHarvest(i, p);
+      const newSoil = Math.max(0, Math.min(100, p.soil - p.type.drain));
+      setPlots(ps => ps.map((x, idx) => idx === i ? { type: null, progress: 0, soil: newSoil } : x));
     }
   };
 
   const sellAll = () => {
-    let totalGain = 0;
-    Object.entries(inv).forEach(([id, count]) => {
-      const multiplier = id === trend ? 2 : 1;
-      totalGain += count * CROPS[id].price * multiplier;
-    });
-    if (totalGain > 0) {
-      setMoney(prev => prev + totalGain);
-      setInv({ WHEAT: 0, CORN: 0 });
-    }
+    let gain = 0;
+    const mod = event.type === 'CRASH' ? 0.5 : 1;
+    Object.entries(inv).forEach(([id, count]) => gain += count * (CROPS[id]?.price || 0) * mod);
+    setMoney(m => m + gain);
+    setInv({ WHEAT: 0, CORN: 0, SUNGRAIN: 0 });
   };
 
   return (
     <GameWrap bg={weather.color}>
-      <TickerBar>
-        <TickerText>{news}</TickerText>
-      </TickerBar>
+      <Ticker><TickerText>{event.name} | Stay vigilant, Farmer.</TickerText></Ticker>
 
       <Section>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ margin: 0 }}>💰 {money}g</h2>
-          <span>{weather.icon} {weather.id}</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <b>💰 {money.toLocaleString()}g</b>
+          <b>💧 Reservoir: {Math.floor(water)}%</b>
         </div>
+        <Meter color="#2196f3" val={water}><div /></Meter>
+        
         <div style={{ marginTop: '10px', display: 'flex', gap: '5px' }}>
-          <button onClick={sellAll} style={{ background: '#2e7d32', color: 'white', flex: 1, padding: '10px', fontWeight: 'bold', cursor: 'pointer' }}>
-            SELL ALL (Bonus on {CROPS[trend].icon})
-          </button>
+          <button onClick={sellAll} style={{ flex: 1, background: '#2e7d32', color: 'white' }}>SELL ALL</button>
+          {!staff.harvester && <button onClick={() => money >= 2000 && (setMoney(m=>m-2000), setStaff({harvester:true}))}>Hire Bot (2k)</button>}
         </div>
       </Section>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', width: '100%', maxWidth: '400px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', width: '100%', maxWidth: '420px' }}>
         {plots.map((p, i) => (
-          <Plot key={i} onClick={() => p.type && p.progress >= 100 && (setInv(prev => ({ ...prev, [p.type.id]: prev[p.type.id] + 1 })), setPlots(ps => ps.map((x, idx) => idx === i ? { type: null, progress: 0, pest: false, water: 100 } : x)))}>
+          <Plot key={i} onClick={() => p.progress >= 100 && manualHarvest(i)}>
             {p.type ? (
-              <div style={{ textAlign: 'center' }}>
+              <>
                 <div style={{ fontSize: '2rem' }}>{p.progress >= 100 ? p.type.icon : '🌱'}</div>
-                <div style={{ fontSize: '10px' }}>{Math.floor(p.progress)}%</div>
-                {p.water < 30 && <div style={{ color: 'blue', fontSize: '10px' }}>💧 WATER!</div>}
-              </div>
+                <Meter color="#4caf50" val={p.progress}><div /></Meter>
+              </>
             ) : (
-              <div style={{ display: 'flex', gap: '4px' }}>
-                {Object.values(CROPS).map(c => <button key={c.id} onClick={() => plant(i, c)}>{c.icon}</button>)}
+              <div style={{ display: 'flex', gap: '2px' }}>
+                {['WHEAT', 'CORN', 'CLOVER'].map(k => (
+                  <button key={k} onClick={(e) => {
+                      e.stopPropagation();
+                      if(money >= CROPS[k].cost) {
+                        setMoney(m=>m-CROPS[k].cost);
+                        setPlots(ps => ps.map((x,idx)=>idx===i?{...x, type:CROPS[k], progress:0}:x));
+                      }
+                  }}>{CROPS[k].icon}</button>
+                ))}
               </div>
             )}
+            <Meter color="#795548" val={p.soil}><div /></Meter>
           </Plot>
         ))}
       </div>
 
-      <Section style={{ marginTop: '15px' }}>
-        <b>Storage Bin:</b> 🌾 {inv.WHEAT} | 🌽 {inv.CORN}
+      <Section style={{fontSize: '12px'}}>
+        <b>Storage:</b> 🌾:{inv.WHEAT} | 🌽:{inv.CORN} | ✨:{inv.SUNGRAIN} <br/>
+        <i>Hint: Soil health (brown bar) affects speed. Clover restores it!</i>
       </Section>
     </GameWrap>
   );
