@@ -4,7 +4,7 @@ import styled, { keyframes } from 'styled-components';
 // --- Animations ---
 const slide = keyframes` 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } `;
 
-// --- Data ---
+// --- Constants ---
 const CROPS = {
   WHEAT: { id: 'WHEAT', icon: '🌾', cost: 10, price: 25, time: 8, drain: 10 },
   CORN: { id: 'CORN', icon: '🌽', cost: 40, price: 100, time: 15, drain: 20 },
@@ -52,36 +52,33 @@ export default function App() {
   const [staff, setStaff] = useState(() => JSON.parse(localStorage.getItem('zf_staff')) || { harvester: false });
   const [plots, setPlots] = useState(() => JSON.parse(localStorage.getItem('zf_plots')) || Array(9).fill({ type: null, progress: 0, soil: 100 }));
   const [stats, setStats] = useState(() => JSON.parse(localStorage.getItem('zf_stats')) || { totalGold: 1000, totalHarvested: 0, cropCounts: { WHEAT: 0, CORN: 0, SUNGRAIN: 0 } });
+  
+  // --- Almanac State ---
+  const [almanac, setAlmanac] = useState(() => JSON.parse(localStorage.getItem('zf_almanac')) || {
+    botanist: false, // 100 Wheat -> +20% Soil Speed
+    merchant: false, // 10k Gold -> -5s Event Dur
+    alchemist: false // 5 SunGrain -> +5% Mutation
+  });
 
   const [weather, setWeather] = useState(WEATHER.CLEAR);
   const [water, setWater] = useState(100);
   const [event, setEvent] = useState({ name: "Stable Market", type: 'NONE' });
-  const [showStats, setShowStats] = useState(false);
+  const [showAlmanac, setShowAlmanac] = useState(false);
 
-  // --- Auto-Save Effect ---
+  // --- Persistence & Almanac Check ---
   useEffect(() => {
     localStorage.setItem('zf_money', JSON.stringify(money));
     localStorage.setItem('zf_inv', JSON.stringify(inv));
     localStorage.setItem('zf_staff', JSON.stringify(staff));
     localStorage.setItem('zf_plots', JSON.stringify(plots));
     localStorage.setItem('zf_stats', JSON.stringify(stats));
-  }, [money, inv, staff, plots, stats]);
+    localStorage.setItem('zf_almanac', JSON.stringify(almanac));
 
-  // --- Event Engine ---
-  useEffect(() => {
-    const eTimer = setInterval(() => {
-      const events = [
-        { name: "🐞 LADYBUG BLITZ: 3x GROWTH SPEED!", type: 'LADYBUG' },
-        { name: "📉 MARKET CRASH: SELL PRICES HALVED!", type: 'CRASH' },
-        { name: "🌞 HEATWAVE: WATER DEPLETING FAST!", type: 'HEAT' }
-      ];
-      const selected = events[Math.floor(Math.random() * events.length)];
-      setEvent(selected);
-      if (selected.type === 'HEAT') setWeather(WEATHER.HEAT);
-      setTimeout(() => { setEvent({ name: "Stable Market", type: 'NONE' }); setWeather(WEATHER.CLEAR); }, 15000);
-    }, 45000);
-    return () => clearInterval(eTimer);
-  }, []);
+    // Check for unlocks
+    if (!almanac.botanist && stats.cropCounts.WHEAT >= 100) setAlmanac(a => ({...a, botanist: true}));
+    if (!almanac.merchant && stats.totalGold >= 10000) setAlmanac(a => ({...a, merchant: true}));
+    if (!almanac.alchemist && stats.cropCounts.SUNGRAIN >= 5) setAlmanac(a => ({...a, alchemist: true}));
+  }, [money, inv, staff, plots, stats, almanac]);
 
   // --- Main Engine ---
   useEffect(() => {
@@ -89,21 +86,25 @@ export default function App() {
       if (weather.id === 'RAIN') setWater(w => Math.min(100, w + 2));
       setPlots(current => current.map((p, i) => {
         if (!p.type) return p;
-        let mult = weather.speed * (p.soil / 100);
+        
+        let soilEff = p.soil / 100;
+        if (almanac.botanist) soilEff *= 1.2; // PERK: Better soil efficiency
+
+        let mult = weather.speed * soilEff;
         if (event.type === 'LADYBUG') mult *= 3;
-        if (water <= 0 && weather.id !== 'RAIN') return p;
-        const growth = (100 / p.type.time) * mult;
-        const nextProgress = Math.min(p.progress + growth, 100);
-        setWater(w => Math.max(0, w - 0.02));
-        if (nextProgress >= 100 && staff.harvester) {
+        
+        const growth = (water > 0 || weather.id === 'RAIN') ? (100 / p.type.time) * mult : 0;
+        if (weather.id !== 'RAIN') setWater(w => Math.max(0, w - 0.02));
+
+        if (Math.min(p.progress + growth, 100) >= 100 && staff.harvester) {
           handleHarvestLogic(i, p);
           return { type: null, progress: 0, soil: Math.max(0, Math.min(100, p.soil - p.type.drain)) };
         }
-        return { ...p, progress: nextProgress };
+        return { ...p, progress: Math.min(p.progress + growth, 100) };
       }));
     }, 1000);
     return () => clearInterval(ticker);
-  }, [weather, event, water, staff.harvester]);
+  }, [weather, event, water, staff.harvester, almanac]);
 
   const handleHarvestLogic = (i, p) => {
     const typeId = p.type.id;
@@ -113,11 +114,15 @@ export default function App() {
       totalHarvested: s.totalHarvested + 1,
       cropCounts: { ...s.cropCounts, [typeId]: (s.cropCounts[typeId] || 0) + 1 }
     }));
-    // Hybrid logic check
+
+    // Hybrid logic
+    let mutChance = 0.1;
+    if (almanac.alchemist) mutChance = 0.15; // PERK: Higher mutation
+
     [i-1, i+1, i-3, i+3].forEach(n => {
-      if (plots[n]?.type && plots[n].type.id !== typeId && Math.random() < 0.1) {
+      if (plots[n]?.type && plots[n].type.id !== typeId && Math.random() < mutChance) {
         setInv(v => ({ ...v, SUNGRAIN: v.SUNGRAIN + 1 }));
-        setStats(s => ({ ...s, cropCounts: { ...s.cropCounts, SUNGRAIN: s.cropCounts.SUNGRAIN + 1 } }));
+        setStats(s => ({ ...s, cropCounts: { ...s.cropCounts, SUNGRAIN: (s.cropCounts.SUNGRAIN || 0) + 1 } }));
       }
     });
   };
@@ -130,39 +135,34 @@ export default function App() {
     }
   };
 
-  const sellAll = () => {
-    let gain = 0;
-    const mod = event.type === 'CRASH' ? 0.5 : 1;
-    Object.entries(inv).forEach(([id, count]) => gain += count * (CROPS[id]?.price || 0) * mod);
-    setMoney(m => m + gain);
-    setStats(s => ({ ...s, totalGold: s.totalGold + gain }));
-    setInv({ WHEAT: 0, CORN: 0, SUNGRAIN: 0 });
-  };
-
-  const mostGrown = Object.keys(stats.cropCounts).reduce((a, b) => stats.cropCounts[a] > stats.cropCounts[b] ? a : b);
-
   return (
     <GameWrap bg={weather.color}>
-      <Ticker><TickerText>{event.name} | Click the stats icon to see your legacy!</TickerText></Ticker>
+      <Ticker><TickerText>{event.name} | Check the 📚 Almanac for Perks!</TickerText></Ticker>
 
       <Section>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <b>💰 {money.toLocaleString()}g</b>
-          <button onClick={() => setShowStats(!showStats)} style={{ background: '#37474f', color: 'white', borderRadius: '50%', width: '30px', height: '30px', border: 'none' }}>📊</button>
+          <button onClick={() => setShowAlmanac(!showAlmanac)} style={{ background: '#5d4037', color: 'white', borderRadius: '4px', border: 'none', padding: '5px 10px' }}>📚 Almanac</button>
         </div>
         <Meter color="#2196f3" val={water}><div /></Meter>
-        <div style={{ marginTop: '10px', display: 'flex', gap: '5px' }}>
-          <button onClick={sellAll} style={{ flex: 1, background: '#2e7d32', color: 'white', fontWeight: 'bold', padding: '10px', cursor: 'pointer' }}>SELL ALL</button>
-          {!staff.harvester && <button onClick={() => money >= 2000 && (setMoney(m=>m-2000), setStaff({harvester:true}))}>Hire Bot (2k)</button>}
-        </div>
+        <button onClick={() => {
+            let gain = 0;
+            const mod = event.type === 'CRASH' ? 0.5 : 1;
+            Object.entries(inv).forEach(([id, count]) => gain += count * (CROPS[id]?.price || 0) * mod);
+            setMoney(m => m + gain);
+            setStats(s => ({ ...s, totalGold: s.totalGold + gain }));
+            setInv({ WHEAT: 0, CORN: 0, SUNGRAIN: 0 });
+        }} style={{ width: '100%', marginTop: '10px', background: '#2e7d32', color: 'white', padding: '10px' }}>SELL ALL HARVEST</button>
       </Section>
 
-      {showStats && (
-        <Section style={{ background: '#f5f5f5', border: '2px dashed #37474f' }}>
-          <h4>👨‍🌾 Farm Records</h4>
-          <p>Total Gold Earned: {stats.totalGold.toLocaleString()}g</p>
-          <p>Crops Harvested: {stats.totalHarvested}</p>
-          <p>Most Grown: {CROPS[mostGrown]?.icon} {mostGrown}</p>
+      {showAlmanac && (
+        <Section style={{ background: '#fff9c4' }}>
+          <h4 style={{margin: '0 0 10px 0'}}>📚 Mastery Rewards</h4>
+          <div style={{fontSize: '13px'}}>
+            <p>{almanac.botanist ? "✅" : "❌"} <b>Botanist:</b> Harvest 100 Wheat (+20% Soil Speed)</p>
+            <p>{almanac.merchant ? "✅" : "❌"} <b>Merchant:</b> 10k Gold Earned (-5s Market Events)</p>
+            <p>{almanac.alchemist ? "✅" : "❌"} <b>Alchemist:</b> 5 SunGrains Found (+5% Mutation)</p>
+          </div>
         </Section>
       )}
 
@@ -186,8 +186,8 @@ export default function App() {
         ))}
       </div>
 
-      <Section style={{ fontSize: '12px', textAlign: 'center' }}>
-        <b>Storage:</b> 🌾:{inv.WHEAT} | 🌽:{inv.CORN} | ✨:{inv.SUNGRAIN}
+      <Section style={{fontSize: '12px', textAlign: 'center'}}>
+        🌾 {inv.WHEAT} | 🌽 {inv.CORN} | ✨ {inv.SUNGRAIN}
       </Section>
     </GameWrap>
   );
