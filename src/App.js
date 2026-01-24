@@ -2,10 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled, { keyframes } from 'styled-components';
 
 // --- Animations ---
-const slide = keyframes` 
-  0% { transform: translateX(100%); } 
-  100% { transform: translateX(-100%); } 
-`;
+const slide = keyframes` 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } `;
 
 // --- Data ---
 const CROPS = {
@@ -32,11 +29,7 @@ const Ticker = styled.div`
   overflow: hidden; white-space: nowrap; border-radius: 8px; margin-bottom: 10px; border: 2px solid #ffd600;
 `;
 
-// THIS WAS THE MISSING DEFINITION:
-const TickerText = styled.div` 
-  display: inline-block; 
-  animation: ${slide} 15s linear infinite; 
-`;
+const TickerText = styled.div` display: inline-block; animation: ${slide} 15s linear infinite; `;
 
 const Section = styled.div`
   background: white; border: 3px solid #37474f; border-radius: 12px; width: 100%; max-width: 480px; padding: 12px; margin-bottom: 10px;
@@ -53,15 +46,28 @@ const Meter = styled.div`
 `;
 
 export default function App() {
-  const [money, setMoney] = useState(1000);
-  const [inv, setInv] = useState({ WHEAT: 0, CORN: 0, SUNGRAIN: 0 });
+  // --- Persistent States ---
+  const [money, setMoney] = useState(() => JSON.parse(localStorage.getItem('zf_money')) || 1000);
+  const [inv, setInv] = useState(() => JSON.parse(localStorage.getItem('zf_inv')) || { WHEAT: 0, CORN: 0, SUNGRAIN: 0 });
+  const [staff, setStaff] = useState(() => JSON.parse(localStorage.getItem('zf_staff')) || { harvester: false });
+  const [plots, setPlots] = useState(() => JSON.parse(localStorage.getItem('zf_plots')) || Array(9).fill({ type: null, progress: 0, soil: 100 }));
+  const [stats, setStats] = useState(() => JSON.parse(localStorage.getItem('zf_stats')) || { totalGold: 1000, totalHarvested: 0, cropCounts: { WHEAT: 0, CORN: 0, SUNGRAIN: 0 } });
+
   const [weather, setWeather] = useState(WEATHER.CLEAR);
   const [water, setWater] = useState(100);
-  const [staff, setStaff] = useState({ harvester: false });
   const [event, setEvent] = useState({ name: "Stable Market", type: 'NONE' });
-  const [plots, setPlots] = useState(Array(9).fill({ type: null, progress: 0, soil: 100 }));
+  const [showStats, setShowStats] = useState(false);
 
-  // --- Market Event Timer ---
+  // --- Auto-Save Effect ---
+  useEffect(() => {
+    localStorage.setItem('zf_money', JSON.stringify(money));
+    localStorage.setItem('zf_inv', JSON.stringify(inv));
+    localStorage.setItem('zf_staff', JSON.stringify(staff));
+    localStorage.setItem('zf_plots', JSON.stringify(plots));
+    localStorage.setItem('zf_stats', JSON.stringify(stats));
+  }, [money, inv, staff, plots, stats]);
+
+  // --- Event Engine ---
   useEffect(() => {
     const eTimer = setInterval(() => {
       const events = [
@@ -72,52 +78,46 @@ export default function App() {
       const selected = events[Math.floor(Math.random() * events.length)];
       setEvent(selected);
       if (selected.type === 'HEAT') setWeather(WEATHER.HEAT);
-      
-      setTimeout(() => {
-        setEvent({ name: "Stable Market", type: 'NONE' });
-        setWeather(WEATHER.CLEAR);
-      }, 15000);
+      setTimeout(() => { setEvent({ name: "Stable Market", type: 'NONE' }); setWeather(WEATHER.CLEAR); }, 15000);
     }, 45000);
     return () => clearInterval(eTimer);
   }, []);
 
-  // --- Core Engine ---
+  // --- Main Engine ---
   useEffect(() => {
     const ticker = setInterval(() => {
       if (weather.id === 'RAIN') setWater(w => Math.min(100, w + 2));
-
       setPlots(current => current.map((p, i) => {
         if (!p.type) return p;
-
         let mult = weather.speed * (p.soil / 100);
         if (event.type === 'LADYBUG') mult *= 3;
-        
         if (water <= 0 && weather.id !== 'RAIN') return p;
-        
         const growth = (100 / p.type.time) * mult;
         const nextProgress = Math.min(p.progress + growth, 100);
-
         setWater(w => Math.max(0, w - 0.02));
-
         if (nextProgress >= 100 && staff.harvester) {
-          handleHarvest(i, p);
+          handleHarvestLogic(i, p);
           return { type: null, progress: 0, soil: Math.max(0, Math.min(100, p.soil - p.type.drain)) };
         }
-
         return { ...p, progress: nextProgress };
       }));
     }, 1000);
     return () => clearInterval(ticker);
   }, [weather, event, water, staff.harvester]);
 
-  const handleHarvest = (i, p) => {
-    if (p.type.price > 0) setInv(v => ({ ...v, [p.type.id]: v[p.type.id] + 1 }));
-    
-    // Check for Hybrid mutation (adjacent check)
-    const neighbors = [i-1, i+1, i-3, i+3];
-    neighbors.forEach(n => {
-      if (plots[n] && plots[n].type && plots[n].type.id !== p.type.id && Math.random() < 0.1) {
+  const handleHarvestLogic = (i, p) => {
+    const typeId = p.type.id;
+    setInv(v => ({ ...v, [typeId]: v[typeId] + 1 }));
+    setStats(s => ({
+      ...s,
+      totalHarvested: s.totalHarvested + 1,
+      cropCounts: { ...s.cropCounts, [typeId]: (s.cropCounts[typeId] || 0) + 1 }
+    }));
+    // Hybrid logic check
+    [i-1, i+1, i-3, i+3].forEach(n => {
+      if (plots[n]?.type && plots[n].type.id !== typeId && Math.random() < 0.1) {
         setInv(v => ({ ...v, SUNGRAIN: v.SUNGRAIN + 1 }));
+        setStats(s => ({ ...s, cropCounts: { ...s.cropCounts, SUNGRAIN: s.cropCounts.SUNGRAIN + 1 } }));
       }
     });
   };
@@ -125,9 +125,8 @@ export default function App() {
   const manualHarvest = (i) => {
     const p = plots[i];
     if (p.progress >= 100) {
-      handleHarvest(i, p);
-      const newSoil = Math.max(0, Math.min(100, p.soil - p.type.drain));
-      setPlots(ps => ps.map((x, idx) => idx === i ? { type: null, progress: 0, soil: newSoil } : x));
+      handleHarvestLogic(i, p);
+      setPlots(ps => ps.map((x, idx) => idx === i ? { type: null, progress: 0, soil: Math.max(0, Math.min(100, p.soil - p.type.drain)) } : x));
     }
   };
 
@@ -136,25 +135,36 @@ export default function App() {
     const mod = event.type === 'CRASH' ? 0.5 : 1;
     Object.entries(inv).forEach(([id, count]) => gain += count * (CROPS[id]?.price || 0) * mod);
     setMoney(m => m + gain);
+    setStats(s => ({ ...s, totalGold: s.totalGold + gain }));
     setInv({ WHEAT: 0, CORN: 0, SUNGRAIN: 0 });
   };
 
+  const mostGrown = Object.keys(stats.cropCounts).reduce((a, b) => stats.cropCounts[a] > stats.cropCounts[b] ? a : b);
+
   return (
     <GameWrap bg={weather.color}>
-      <Ticker><TickerText>{event.name} | Stay vigilant, Farmer.</TickerText></Ticker>
+      <Ticker><TickerText>{event.name} | Click the stats icon to see your legacy!</TickerText></Ticker>
 
       <Section>
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <b>💰 {money.toLocaleString()}g</b>
-          <b>💧 Reservoir: {Math.floor(water)}%</b>
+          <button onClick={() => setShowStats(!showStats)} style={{ background: '#37474f', color: 'white', borderRadius: '50%', width: '30px', height: '30px', border: 'none' }}>📊</button>
         </div>
         <Meter color="#2196f3" val={water}><div /></Meter>
-        
         <div style={{ marginTop: '10px', display: 'flex', gap: '5px' }}>
-          <button onClick={sellAll} style={{ flex: 1, background: '#2e7d32', color: 'white' }}>SELL ALL</button>
+          <button onClick={sellAll} style={{ flex: 1, background: '#2e7d32', color: 'white', fontWeight: 'bold', padding: '10px', cursor: 'pointer' }}>SELL ALL</button>
           {!staff.harvester && <button onClick={() => money >= 2000 && (setMoney(m=>m-2000), setStaff({harvester:true}))}>Hire Bot (2k)</button>}
         </div>
       </Section>
+
+      {showStats && (
+        <Section style={{ background: '#f5f5f5', border: '2px dashed #37474f' }}>
+          <h4>👨‍🌾 Farm Records</h4>
+          <p>Total Gold Earned: {stats.totalGold.toLocaleString()}g</p>
+          <p>Crops Harvested: {stats.totalHarvested}</p>
+          <p>Most Grown: {CROPS[mostGrown]?.icon} {mostGrown}</p>
+        </Section>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', width: '100%', maxWidth: '420px' }}>
         {plots.map((p, i) => (
@@ -167,13 +177,7 @@ export default function App() {
             ) : (
               <div style={{ display: 'flex', gap: '2px' }}>
                 {['WHEAT', 'CORN', 'CLOVER'].map(k => (
-                  <button key={k} onClick={(e) => {
-                      e.stopPropagation();
-                      if(money >= CROPS[k].cost) {
-                        setMoney(m=>m-CROPS[k].cost);
-                        setPlots(ps => ps.map((x,idx)=>idx===i?{...x, type:CROPS[k], progress:0}:x));
-                      }
-                  }}>{CROPS[k].icon}</button>
+                  <button key={k} onClick={(e) => { e.stopPropagation(); if(money >= CROPS[k].cost) { setMoney(m=>m-CROPS[k].cost); setPlots(ps => ps.map((x,idx)=>idx===i?{...x, type:CROPS[k], progress:0}:x)); } }}>{CROPS[k].icon}</button>
                 ))}
               </div>
             )}
@@ -182,9 +186,8 @@ export default function App() {
         ))}
       </div>
 
-      <Section style={{fontSize: '12px'}}>
-        <b>Storage:</b> 🌾:{inv.WHEAT} | 🌽:{inv.CORN} | ✨:{inv.SUNGRAIN} <br/>
-        <i>Hint: Soil health (brown bar) affects speed. Clover restores it!</i>
+      <Section style={{ fontSize: '12px', textAlign: 'center' }}>
+        <b>Storage:</b> 🌾:{inv.WHEAT} | 🌽:{inv.CORN} | ✨:{inv.SUNGRAIN}
       </Section>
     </GameWrap>
   );
