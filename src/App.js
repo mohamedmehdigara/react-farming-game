@@ -7,8 +7,7 @@ const sparkle = keyframes` 0% { filter: brightness(1); } 50% { filter: brightnes
 
 const CROPS = {
   WHEAT: { id: 'WHEAT', icon: '🌾', cost: 10, basePrice: 25, time: 8, drain: 15 },
-  CORN: { id: 'CORN', icon: '🌽', cost: 40, basePrice: 100, time: 15, drain: 25 },
-  SUNGRAIN: { id: 'SUNGRAIN', icon: '✨', cost: 0, basePrice: 1500, time: 30, drain: 50 }
+  CORN: { id: 'CORN', icon: '🌽', cost: 40, basePrice: 100, time: 15, drain: 25 }
 };
 
 // --- Styled Components ---
@@ -32,12 +31,13 @@ const PlotGrid = styled.div`
 
 const Plot = styled.div`
   aspect-ratio: 1/1; 
+  /* Visual Correction: Saturated color for better feedback */
   background: ${props => props.isSaturated ? '#3e2723' : (props.isSuper ? '#5d4037' : (props.isNight ? '#1c2128' : '#f6f8fa'))}; 
   border: ${props => props.isSuper ? '3px solid #ffd700' : '1px solid rgba(0,0,0,0.1)'}; 
   border-radius: 14px; position: relative; display: flex; flex-direction: column; 
   align-items: center; justify-content: center; cursor: pointer;
   animation: ${props => props.isSuper ? sparkle : 'none'} 3s infinite;
-  transition: transform 0.2s;
+  transition: background 0.5s, transform 0.2s;
   &:active { transform: scale(0.95); }
 `;
 
@@ -61,7 +61,7 @@ const ShopItem = styled.div`
 
 export default function App() {
   const [money, setMoney] = useState(() => Number(JSON.parse(localStorage.getItem('zf_money'))) || 1000);
-  const [inv, setInv] = useState(() => JSON.parse(localStorage.getItem('zf_inv')) || { WHEAT: 0, CORN: 0, SUNGRAIN: 0, COMPOST: 0, KELP: 0 });
+  const [inv, setInv] = useState(() => JSON.parse(localStorage.getItem('zf_inv')) || { WHEAT: 0, CORN: 0, COMPOST: 0, KELP: 0 });
   const [plots, setPlots] = useState(() => JSON.parse(localStorage.getItem('zf_plots')) || Array(9).fill({ type: null, progress: 0, soil: 100, isSuper: false, isSaturated: false }));
   const [tech, setTech] = useState({ sprinkler: false, greenhouse: false });
   const [staff, setStaff] = useState({ harvester: false });
@@ -69,7 +69,7 @@ export default function App() {
   const [uiState, setUiState] = useState('farm');
   const [isNight, setIsNight] = useState(false);
 
-  // --- Logic Helpers ---
+  // --- Scoped Logic ---
   const handleHarvest = (i, p) => {
     setInv(v => ({ ...v, [p.type.id]: (v[p.type.id] || 0) + 1 }));
     setPlots(ps => ps.map((x, idx) => idx === i ? { ...x, type: null, progress: 0, isSuper: false, soil: Math.max(0, p.soil - p.type.drain) } : x));
@@ -89,15 +89,23 @@ export default function App() {
     }
   };
 
-  // --- Game Loop ---
+  // --- Persistence ---
+  useEffect(() => {
+    localStorage.setItem('zf_money', JSON.stringify(money));
+    localStorage.setItem('zf_inv', JSON.stringify(inv));
+    localStorage.setItem('zf_plots', JSON.stringify(plots));
+  }, [money, inv, plots]);
+
+  // --- Game Engine ---
   useEffect(() => {
     const ticker = setInterval(() => {
-      setWater(w => Math.max(0, Math.min(100, w + 0.2 - (tech.sprinkler ? 0.4 : 0))));
+      // Water drain and refill logic
+      setWater(w => Math.max(0, Math.min(100, w + 0.2 - (tech.sprinkler ? 0.45 : 0))));
 
       setPlots(current => current.map((p, i) => {
         let currentSoil = p.soil || 0;
         const sprinklerActive = tech.sprinkler && water > 0;
-        if (sprinklerActive) currentSoil = Math.min(100, currentSoil + 2.5);
+        if (sprinklerActive) currentSoil = Math.min(100, currentSoil + 3); // Faster recovery when active
         
         if (!p.type) return { ...p, soil: currentSoil, isSaturated: sprinklerActive };
 
@@ -106,6 +114,7 @@ export default function App() {
         const growth = (100 / p.type.time) * timeMod * (currentSoil / 100) * (p.isSuper ? 3 : 1);
         const nextProgress = Math.min(p.progress + growth, 100);
 
+        // Staff Logic
         if (nextProgress >= 100 && staff.harvester) {
           setInv(v => ({ ...v, [p.type.id]: (v[p.type.id] || 0) + 1 }));
           return { ...p, type: null, progress: 0, isSuper: false, soil: Math.max(0, currentSoil - p.type.drain) };
@@ -139,7 +148,7 @@ export default function App() {
               <Plot key={i} isNight={isNight} isSuper={p.isSuper} isSaturated={p.isSaturated} onClick={() => p.progress >= 100 && handleHarvest(i, p)}>
                 {p.type ? (
                   <>
-                    <span style={{ fontSize: '2.2rem' }}>{p.progress >= 100 ? p.type.icon : '🌱'}</span>
+                    <span style={{ fontSize: '2.4rem' }}>{p.progress >= 100 ? p.type.icon : '🌱'}</span>
                     <Meter color="#4caf50" val={p.progress}><div /></Meter>
                   </>
                 ) : (
@@ -158,8 +167,8 @@ export default function App() {
               </Plot>
             ))}
           </PlotGrid>
-          <ActionBtn active={tech.sprinkler} style={{ width: '100%', maxWidth: '420px', marginTop: '12px', padding: '12px' }} onClick={() => setTech(t => ({...t, sprinkler: !t.sprinkler}))}>
-            {tech.sprinkler ? '🚿 SPRINKLERS ACTIVE' : '🚿 START SPRINKLERS'}
+          <ActionBtn active={tech.sprinkler} style={{ width: '100%', maxWidth: '420px', marginTop: '12px', padding: '15px', borderRadius: '12px' }} onClick={() => setTech(t => ({...t, sprinkler: !t.sprinkler}))}>
+            {tech.sprinkler ? '🚿 SPRINKLERS ON' : '🚿 TURN ON SPRINKLERS'}
           </ActionBtn>
         </>
       )}
@@ -168,10 +177,10 @@ export default function App() {
         <Section dark={isNight}>
           <h3>Barn Storage</h3>
           <p>🌾 Wheat: {inv.WHEAT} | 🌽 Corn: {inv.CORN}</p>
-          <ActionBtn color="#2ea44f" style={{ width: '100%' }} onClick={() => {
+          <ActionBtn color="#2ea44f" style={{ width: '100%', padding: '15px' }} onClick={() => {
             setMoney(m => m + (inv.WHEAT * 25) + (inv.CORN * 100));
             setInv(v => ({ ...v, WHEAT: 0, CORN: 0 }));
-          }}>SELL ALL HARVEST</ActionBtn>
+          }}>SELL ALL FOR CASH</ActionBtn>
         </Section>
       )}
 
@@ -179,16 +188,16 @@ export default function App() {
         <Section dark={isNight}>
           <h3>Estate Supplies</h3>
           <ShopItem>
-            <span>💩 Compost (Instant 100% Soil)</span>
+            <span>💩 Compost (100% Soil)</span>
             <ActionBtn onClick={() => buySupply('COMPOST', 150)}>Buy: 150g</ActionBtn>
           </ShopItem>
           <ShopItem>
-            <span>🌿 Kelp (Super Growth Soil)</span>
+            <span>🌿 Kelp (Super Soil)</span>
             <ActionBtn onClick={() => buySupply('KELP', 500)}>Buy: 500g</ActionBtn>
           </ShopItem>
           <h3>Automation</h3>
           <ActionBtn disabled={staff.harvester || money < 2000} onClick={() => { setMoney(m => m - 2000); setStaff({ harvester: true }); }}>
-            🤖 Buy Auto-Harvester (2,000g)
+            🤖 Auto-Harvester (2,000g)
           </ActionBtn>
         </Section>
       )}
